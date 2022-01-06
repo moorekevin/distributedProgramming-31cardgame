@@ -1,4 +1,4 @@
-package chatApplication;
+package application;
 
 import java.util.ArrayList;
 import java.util.UUID;
@@ -43,7 +43,6 @@ public class Server {
 			this.chat = chat;
 		}
 
-		@Override
 		public void run() {
 			while(true) {
 				try {
@@ -51,7 +50,7 @@ public class Server {
 					for (String user : Server.users) {
 						chat.put(user, t[1], t[2]);
 					}
-					System.out.println(t[1] + ": " + t[2]);
+					System.out.println(t[1] +  ": " + t[2]);
 				} catch (InterruptedException e) {
 					e.printStackTrace();
 				}

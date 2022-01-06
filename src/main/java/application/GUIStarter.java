@@ -1,9 +1,9 @@
-package chatApplication;
+package application;
 
 public class GUIStarter {
 
 	public static void main(String[] args) {
-		HelloFX.main(args);
+		HelloWorld.main(args);
 
 	}
 

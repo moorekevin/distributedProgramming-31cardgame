@@ -1,4 +1,4 @@
-package chatApplication;
+package application;
 
 import java.io.IOException;
 import java.util.Scanner;
@@ -30,7 +30,10 @@ public class Client {
 				chat.put("message",username, message);
 			}
 			
-		} catch (IOException | InterruptedException e) {
+		} catch (IOException e) {
+			e.printStackTrace();
+		} catch (InterruptedException e) {
+			// TODO Auto-generated catch block
 			e.printStackTrace();
 		}
 
@@ -43,7 +46,6 @@ public class Client {
 			this.chat = chat;
 		}
 
-		@Override
 		public void run() {
 			while(true) {
 				Object[] t;
