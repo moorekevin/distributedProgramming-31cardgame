@@ -7,7 +7,7 @@ import java.util.UUID;
 import org.jspace.*;
 
 public class Server {
-	public static final String START_URI = "tcp://localhost:3000/";
+	public static final String START_URI = "tcp://localhost:9002/";
 	public static final String END_URI = "?keep";
 
 	public static void main(String[] args) {
@@ -15,7 +15,7 @@ public class Server {
 		SequentialSpace startSpace = new SequentialSpace();
 		ArrayList<String> users = new ArrayList<String>();
 
-		rep.add("startMenu", startSpace);
+		rep.add("startSpace", startSpace);
 
 		final String gateUri = START_URI + END_URI;
 		rep.addGate(gateUri);
@@ -27,17 +27,17 @@ public class Server {
 	}
 
 	private static void connectUsers(ArrayList<String> users, SpaceRepository rep, Space startSpace) {
-		new Thread(new lobbyButler(rep, startSpace)).start();
+ 		new Thread(new lobbyButler(rep, startSpace)).start();
 
 		while (true) {
 			try {
-				String user = ((String) (startSpace.get(new ActualField("user connected"),
+				String username = ((String) (startSpace.get(new ActualField("user connected"),
 						new FormalField(String.class)))[1]);
 				String uniqueID = UUID.randomUUID().toString();
 				users.add(uniqueID);
-				startSpace.put("uniqueid", user, uniqueID);
+				startSpace.put("uniqueid", username, uniqueID);
 
-				System.out.println(user + " has connected");
+				System.out.println(username + " has connected");
 			} catch (InterruptedException e) {
 				e.printStackTrace();
 			}
@@ -72,20 +72,20 @@ class lobbyButler implements Runnable {
 	public void run() {
 		try {
 			while (true) {
-				// (UNIQUEIDENTIFIER, "join", "Name")
-				// (UNIQUEIDENTIFIER, "host", "Name")
-				Object[] request = (startSpace.get(new FormalField(String.class), new FormalField(String.class),
-						new FormalField(String.class)));
-				String userID = (String) request[0];
-				String command = (String) request[1];
-				String lobbyName = (String) request[2];
+				// ("lobby request", UNIQUEIDENTIFIER, "join", "Name")
+				// ("lobby request", UNIQUEIDENTIFIER, "host", "Name")
+				Object[] request = (startSpace.get(new ActualField("lobby request"), new FormalField(String.class),
+						new FormalField(String.class), new FormalField(String.class)));
+				String userID = (String) request[1];
+				String command = (String) request[2];
+				String lobbyName = (String) request[3];
 
-				if (command.equals("join")) {
+				if (command.equals("j")) {
 					new Thread(new joinLobby(rep, startSpace, lobbyName, userID)).start();
-				} else if (command.equals("host")) {
+				} else if (command.equals("h")) {
 					new Thread(new createLobby(rep, startSpace, lobbyName, userID)).start();
 				} else {
-					startSpace.put("message", userID, "Unknown command, please try again");
+					startSpace.put("message", userID, "Unknown command \"" + command + "\", please try again");
 				}
 			}
 		} catch (InterruptedException e) {
@@ -116,8 +116,8 @@ class createLobby implements Runnable {
 				SequentialSpace createdLobby = new SequentialSpace();
 				rep.add(lobbyName, createdLobby);
 				System.out.println("Created lobby " + lobbyName + " for " + userID);
-				new joinLobby(rep, startSpace, lobbyName, userID);
-				
+				(new joinLobby(rep, startSpace, lobbyName, userID)).run();
+
 				createdLobby.put("host", userID);
 			}
 		} catch (InterruptedException e) {
@@ -138,14 +138,16 @@ class joinLobby implements Runnable {
 		this.rep = rep;
 		this.userID = userID;
 		this.lobby = rep.get(lobbyName);
+		this.lobbyName = lobbyName;
 	}
 
 	public void run() {
 		try {
 			if (lobby == null) {
-				System.out.println("Lobby " + lobbyName + " is unavailable");
+				System.out.println("User " + userID  + "tried to join " + lobbyName + " but it is unavailable");
 				startSpace.put("message", userID, "Lobby " + lobbyName + " is unavailable");
 			} else {
+				System.out.println("User " + userID + " joining lobby " + lobbyName);
 				String lobbyURI = Server.START_URI + lobbyName + Server.END_URI;
 				startSpace.put("join this lobby", userID, lobbyURI);
 			}
