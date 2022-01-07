@@ -5,49 +5,63 @@ import java.util.Scanner;
 
 import org.jspace.*;
 
-public class Client {
-	static String id;
+public class Player {
+	private String id;
+	private final int START_GATE = 30000;
+	private final String startMenu = "startMenu";
+	private RemoteSpace chat;
 
-	public static void main(String[] args) {
-		final String uri = "tcp://25.62.120.1:9002/chat?keep";
+	public Player() {
+		final String uri = "tcp://localhost:" + START_GATE + "/" + startMenu + "?keep";
 		Scanner reader = new Scanner(System.in);
 		try {
 			System.out.println("Enter your username: ");
 			String username = reader.nextLine();
-			
-			RemoteSpace chat = new RemoteSpace(uri);
-			
+
+			chat = new RemoteSpace(uri);
+
+			/*
+			 * RemoteSpace lobby = new RemoteSpace(uriLobby); lobby.get("turn", playerid);
+			 * lobby.put("drawfromshuffle", playerid); ...do stuff... lobby.put("endturn",
+			 * playerid);
+			 * 
+			 */
+
 			chat.put("user connected", username);
-			
-			id = (String) (chat.get(new ActualField("uniqueid"),new ActualField(username), new FormalField(String.class)))[2];
-						
+
+			id = (String) (chat.get(new ActualField("uniqueid"), new ActualField(username),
+					new FormalField(String.class)))[2];
+
 			System.out.println("Connected to chat - start chatting!");
-			
+
 			new Thread(new printMessages(chat)).start();
-			
+
 			while (true) {
 				String message = reader.nextLine();
-				chat.put("message",username, message);
+				chat.put("message", username, message);
 			}
-			
+
 		} catch (IOException e) {
 			e.printStackTrace();
 		} catch (InterruptedException e) {
-			// TODO Auto-generated catch block
 			e.printStackTrace();
 		}
 
 	}
-	
-	static class printMessages implements Runnable {
+
+	public static void main(String[] args) {
+		Player player = new Player();
+	}
+
+	class printMessages implements Runnable {
 		Space chat;
-		
+
 		public printMessages(Space chat) {
 			this.chat = chat;
 		}
 
 		public void run() {
-			while(true) {
+			while (true) {
 				Object[] t;
 				try {
 					t = chat.get(new ActualField(id), new FormalField(String.class), new FormalField(String.class));
@@ -57,7 +71,7 @@ public class Client {
 				}
 			}
 		}
-		
+
 	}
 
 }

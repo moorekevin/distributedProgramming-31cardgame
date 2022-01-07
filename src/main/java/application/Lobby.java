@@ -1,9 +1,9 @@
 package application;
 
-public class GUIStarter {
+public class Lobby {
 
 	public static void main(String[] args) {
-		GUI.main(args);
+		// TODO Auto-generated method stub
 
 	}
 
