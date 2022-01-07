@@ -117,6 +117,7 @@ class createLobby implements Runnable {
 				rep.add(lobbyName, createdLobby);
 				System.out.println("Created lobby " + lobbyName + " for " + userID);
 				new joinLobby(rep, startSpace, lobbyName, userID);
+				
 				createdLobby.put("host", userID);
 			}
 		} catch (InterruptedException e) {

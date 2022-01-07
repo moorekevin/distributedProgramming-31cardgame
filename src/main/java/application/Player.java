@@ -8,17 +8,15 @@ import org.jspace.*;
 public class Player {
 	private String id;
 	private final int START_GATE = 30000;
-	private final String startMenu = "startMenu";
+	private final String START_NAME = "startSpace";
 	private RemoteSpace chat;
 
 	public Player() {
-		final String uri = "tcp://localhost:" + START_GATE + "/" + startMenu + "?keep";
-		Scanner reader = new Scanner(System.in);
+		final String uri = "tcp://localhost:" + START_GATE + "/" + START_NAME + "?keep";
 		try {
-			System.out.println("Enter your username: ");
-			String username = reader.nextLine();
+			String username = getInput("Enter your username:");
 
-			chat = new RemoteSpace(uri);
+			RemoteSpace startSpace = new RemoteSpace(uri);
 
 			/*
 			 * RemoteSpace lobby = new RemoteSpace(uriLobby); lobby.get("turn", playerid);
@@ -27,23 +25,12 @@ public class Player {
 			 * 
 			 */
 
-			chat.put("user connected", username);
+			startSpace.put("user connected", username);
 
 			id = (String) (chat.get(new ActualField("uniqueid"), new ActualField(username),
 					new FormalField(String.class)))[2];
 
-			System.out.println("Connected to chat - start chatting!");
-
-			new Thread(new printMessages(chat)).start();
-
-			while (true) {
-				String message = reader.nextLine();
-				chat.put("message", username, message);
-			}
-
-		} catch (IOException e) {
-			e.printStackTrace();
-		} catch (InterruptedException e) {
+		} catch (InterruptedException | IOException e) {
 			e.printStackTrace();
 		}
 
@@ -52,7 +39,24 @@ public class Player {
 	public static void main(String[] args) {
 		Player player = new Player();
 	}
+	
+	public String getInput(String question) {
+		Scanner reader = new Scanner(System.in);
+		
+		System.out.println(question);
+		String input = reader.nextLine();
+		reader.close();
+		return input;
+	}
+}
 
+/* CHAT FUNCTIONALITY
+	new Thread(new printMessages(chat)).start();
+
+	while (true) {
+		String message = reader.nextLine();
+		chat.put("message", username, message);
+	}
 	class printMessages implements Runnable {
 		Space chat;
 
@@ -73,5 +77,6 @@ public class Player {
 		}
 
 	}
+*/
 
-}
+
