@@ -1,5 +1,7 @@
 package application;
 
+import java.util.List;
+
 import org.jspace.*;
 
 public class Game implements Runnable {
@@ -9,7 +11,7 @@ public class Game implements Runnable {
 
 	public Game(Space lobbySpace) throws InterruptedException {
 		this.lobbySpace = lobbySpace;
-	
+
 		// Add 52 cards to shuffleDeck
 		for (Card.Num num : Card.Num.values()) {
 			for (Card.Suit suit : Card.Suit.values()) {
@@ -23,11 +25,22 @@ public class Game implements Runnable {
 	}
 
 	public void run() {
-		/*try {
-			
-			
+		try {
+			// Deal 3 cards to all joined members
+			List<Object[]> membersID = lobbySpace.queryAll(new ActualField("lobbymember"),
+					new FormalField(String.class));
+			for (Object[] member : membersID) {
+//				Card[] initialHand = new Card[3];
+				String id = (String) member[1];
+				for (int i = 0; i < 3; i++) {
+					Card card = (Card) shuffleDeck.get(new FormalField(Card.class))[0];
+					lobbySpace.put("dealingcards", id, card);
+//					initialHand[i] = card;
+				}
+//				lobbySpace.put("dealingcards", id, initialHand);
+			}
 		} catch (InterruptedException e) {
 			e.printStackTrace();
-		}*/
+		}
 	}
 }

@@ -53,9 +53,14 @@ public class Player {
 			e.printStackTrace();
 		}
 	}
-
+	// TODO: when asking h/j, handle miss-input
 	private void readStartOption() throws InterruptedException, IOException {
-		String command = getInput("Do you want to (h)ost or (j)oin a lobby?").toLowerCase();
+		String command = null;
+		do {
+			command = getInput("Do you want to (h)ost or (j)oin a lobby?").toLowerCase();
+			if (command.equals("h") || command.equals("j"))
+				break;
+		} while (true);
 
 		String lobbyName = getInput("What is the name of the lobby?\n Spaces will get replaced with \"_\"")
 				.toLowerCase().replaceAll("\\s+", "_");
@@ -128,14 +133,21 @@ public class Player {
 	}
 
 	private void startPlaying() throws InterruptedException {
+		// TODO: jSpace.get doesn't seem to get a list
 
 		// Get dealt cards
-		Card[] initialHand = (Card[]) (lobbySpace.get(new ActualField("dealingcards"), new ActualField(id),
-				new FormalField(Card.class)))[2];
-
-		for (Card thisCard : initialHand) {
-			handSpace.put(thisCard);
+//		Card[] initialHand = (Card[]) (lobbySpace.get(new ActualField("dealingcards"), new ActualField(id),
+//				new FormalField(Card.class)))[2];
+//		for (Card thisCard : initialHand) {
+//			handSpace.put(thisCard);
+//		}
+		for (int i = 0; i < 3; i++) {
+			Card card = (Card) (lobbySpace.get(new ActualField("dealingcards"), new ActualField(id),
+					new FormalField(Card.class)))[2];
+			System.out.println("Card: " + card);
+			handSpace.put(card);
 		}
+		
 		while (true) {
 			lobbySpace.get(new ActualField("turn"), new ActualField(id));
 			System.out.println("Your turn");
