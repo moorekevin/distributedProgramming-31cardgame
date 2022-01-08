@@ -13,6 +13,8 @@ public class Server {
 	public static void main(String[] args) {
 		SpaceRepository rep = new SpaceRepository();
 		SequentialSpace startSpace = new SequentialSpace();
+		SequentialSpace lobbyMembers = new SequentialSpace();
+		// lobbyName , id
 		ArrayList<String> users = new ArrayList<String>();
 
 		rep.add("startSpace", startSpace);
@@ -74,10 +76,10 @@ class lobbyButler implements Runnable {
 			while (true) {
 				// ("lobby request", UNIQUEIDENTIFIER, "join", "Name")
 				// ("lobby request", UNIQUEIDENTIFIER, "host", "Name")
-				Object[] request = (startSpace.get(new ActualField("lobby request"), new FormalField(String.class),
+				Object[] request = (startSpace.get(new ActualField("lobbyrequest"), new FormalField(String.class),
 						new FormalField(String.class), new FormalField(String.class)));
 				String userID = (String) request[1];
-				String command = (String) request[2];
+				String command = ((String) request[2]).toLowerCase();
 				String lobbyName = (String) request[3];
 
 				if (command.equals("j")) {
@@ -85,7 +87,7 @@ class lobbyButler implements Runnable {
 				} else if (command.equals("h")) {
 					new Thread(new createLobby(rep, startSpace, lobbyName, userID)).start();
 				} else {
-					startSpace.put("message", userID, "Unknown command \"" + command + "\", please try again");
+					startSpace.put("error", userID, "Unknown command \"" + command + "\", please try again");
 				}
 			}
 		} catch (InterruptedException e) {
@@ -111,7 +113,7 @@ class createLobby implements Runnable {
 		try {
 			if (rep.get(lobbyName) != null) {
 				System.out.println("User tried to create lobby " + lobbyName + " but it already exists");
-				startSpace.put("message", userID, "Lobby " + lobbyName + " already exists");
+				startSpace.put("lobbyinfo", "error", userID, "Lobby " + lobbyName + " already exists");
 			} else {
 				SequentialSpace createdLobby = new SequentialSpace();
 				rep.add(lobbyName, createdLobby);
@@ -119,6 +121,7 @@ class createLobby implements Runnable {
 				(new joinLobby(rep, startSpace, lobbyName, userID)).run();
 
 				createdLobby.put("host", userID);
+				createdLobby.put("lobbystatus","public");
 			}
 		} catch (InterruptedException e) {
 			e.printStackTrace();
@@ -145,11 +148,16 @@ class joinLobby implements Runnable {
 		try {
 			if (lobby == null) {
 				System.out.println("User " + userID  + "tried to join " + lobbyName + " but it is unavailable");
-				startSpace.put("message", userID, "Lobby " + lobbyName + " is unavailable");
+				startSpace.put("lobbyinfo", "error", userID, "Lobby " + lobbyName + " is unavailable");
 			} else {
-				System.out.println("User " + userID + " joining lobby " + lobbyName);
-				String lobbyURI = Server.START_URI + lobbyName + Server.END_URI;
-				startSpace.put("join this lobby", userID, lobbyURI);
+				String status = (String) (lobby.query(new ActualField("lobbystatus"),new FormalField(String.class)))[1];
+				if (status.equals("private")) {
+					startSpace.put("lobbyinfo", "error", userID, "Lobby " + lobbyName + " has already started try another!");
+				} else {
+					System.out.println("User " + userID + " joining lobby " + lobbyName);
+					String lobbyURI = Server.START_URI + lobbyName + Server.END_URI;
+					startSpace.put("lobbyinfo", "join", userID, lobbyURI);
+				}
 			}
 		} catch (InterruptedException e) {
 			e.printStackTrace();
