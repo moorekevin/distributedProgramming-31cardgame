@@ -97,7 +97,7 @@ public class Player {
 			// lobbySpace.queryAll
 			lobbySpace.put("lobbymember", id);
 
-			System.out.println("Joining lobby...\n");
+			System.out.println("Joined lobby. Waiting for game to start\n");
 		} catch (UnknownHostException e) {
 			// Should not happen
 			System.out.println("ERROR: Cannot find lobby, check URI");

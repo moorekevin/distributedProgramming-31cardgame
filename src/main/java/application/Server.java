@@ -2,6 +2,7 @@
 package application;
 
 import java.util.ArrayList;
+import java.util.List;
 import java.util.UUID;
 
 import org.jspace.*;
@@ -29,7 +30,7 @@ public class Server {
 	}
 
 	private static void connectUsers(ArrayList<String> users, SpaceRepository rep, Space startSpace) {
- 		new Thread(new lobbyButler(rep, startSpace)).start();
+		new Thread(new lobbyButler(rep, startSpace)).start();
 
 		while (true) {
 			try {
@@ -118,10 +119,11 @@ class createLobby implements Runnable {
 				SequentialSpace createdLobby = new SequentialSpace();
 				rep.add(lobbyName, createdLobby);
 				System.out.println("Created lobby " + lobbyName + " for " + userID);
-				(new joinLobby(rep, startSpace, lobbyName, userID)).run();
 
 				createdLobby.put("host", userID);
-				createdLobby.put("lobbystatus","public");
+				createdLobby.put("lobbystatus", "public");
+				
+				(new joinLobby(rep, startSpace, lobbyName, userID)).run();
 			}
 		} catch (InterruptedException e) {
 			e.printStackTrace();
@@ -146,17 +148,23 @@ class joinLobby implements Runnable {
 
 	public void run() {
 		try {
-			if (lobby == null) {
+			if (lobby == null) { // If no lobby with that name
 				System.out.println("User " + userID  + "tried to join " + lobbyName + " but it is unavailable");
 				startSpace.put("lobbyinfo", "error", userID, "Lobby " + lobbyName + " is unavailable");
 			} else {
-				String status = (String) (lobby.query(new ActualField("lobbystatus"),new FormalField(String.class)))[1];
-				if (status.equals("private")) {
-					startSpace.put("lobbyinfo", "error", userID, "Lobby " + lobbyName + " has already started try another!");
+				String status = (String) (lobby.query(new ActualField("lobbystatus"), new FormalField(String.class)))[1];
+				if (status.equals("private")) { // If lobby is private and the game is already begun
+					startSpace.put("lobbyinfo", "error", userID, "Lobby " + lobbyName + " has already started, try another!");
 				} else {
-					System.out.println("User " + userID + " joining lobby " + lobbyName);
-					String lobbyURI = Server.START_URI + lobbyName + Server.END_URI;
-					startSpace.put("lobbyinfo", "join", userID, lobbyURI);
+					List<Object[]> members = lobby.queryAll(new ActualField("lobbymember"), new FormalField(String.class));
+					
+					if (members.size() >= 4) { // If lobby is at max capacity
+						startSpace.put("lobbyinfo", "error", userID, "Lobby " + lobbyName + " is full, try another!");
+					} else { // Success
+						System.out.println("User " + userID + " joining lobby " + lobbyName);
+						String lobbyURI = Server.START_URI + lobbyName + Server.END_URI;
+						startSpace.put("lobbyinfo", "join", userID, lobbyURI);
+					}
 				}
 			}
 		} catch (InterruptedException e) {
