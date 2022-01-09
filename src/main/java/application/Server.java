@@ -147,6 +147,7 @@ class joinLobby implements Runnable {
 	}
 
 	public void run() {
+		// TODO: make a minimum of 2 players before game starts
 		try {
 			if (lobby == null) { // If no lobby with that name
 				System.out.println("User " + userID  + "tried to join " + lobbyName + " but it is unavailable");

@@ -27,6 +27,10 @@ public class Card {
 	public int getPoints() {
 		return points;
 	}
+	
+	public String getSuit(){
+		return "" + suit;
+	}
 
 	@Override
 	public String toString() {
