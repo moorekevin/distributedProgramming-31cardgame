@@ -7,16 +7,19 @@ import java.util.UUID;
 
 import org.jspace.*;
 
+import java.util.HashMap;
+
 public class Server {
 	public static final String START_URI = "tcp://localhost:9002/";
 	public static final String END_URI = "?keep";
+	public static HashMap<String, String> users;
 
 	public static void main(String[] args) {
 		SpaceRepository rep = new SpaceRepository();
 		SequentialSpace startSpace = new SequentialSpace();
 		SequentialSpace lobbyMembers = new SequentialSpace();
 		// lobbyName , id
-		ArrayList<String> users = new ArrayList<String>();
+		users = new HashMap<String, String>();
 
 		rep.add("startSpace", startSpace);
 
@@ -29,15 +32,15 @@ public class Server {
 		connectUsers(users, rep, startSpace);
 	}
 
-	private static void connectUsers(ArrayList<String> users, SpaceRepository rep, Space startSpace) {
-		new Thread(new lobbyButler(rep, startSpace)).start();
+	private static void connectUsers(HashMap<String,String> users, SpaceRepository rep, Space startSpace) {
+		new Thread(new lobbyButler(users, rep, startSpace)).start();
 
 		while (true) {
 			try {
 				String username = ((String) (startSpace.get(new ActualField("user connected"),
 						new FormalField(String.class)))[1]);
 				String uniqueID = UUID.randomUUID().toString();
-				users.add(uniqueID);
+				users.put(uniqueID, username);
 				startSpace.put("uniqueid", username, uniqueID);
 
 				System.out.println(username + " has connected");
@@ -47,6 +50,30 @@ public class Server {
 		}
 	}
 }
+
+	class listenLobby implements Runnable {
+		Space space;
+		
+		public listenLobby(Space space) {
+			this.space = space;
+		}
+		
+		public void run() {
+			try {
+				while (true) {
+					Object[] request = space.get(new ActualField("serverrequest"), new FormalField(String.class), new FormalField(String.class), new FormalField(String.class));
+					String action = (String) request[1];
+					if (action.equals("username")) {
+						String userRequesting = (String) request[2];
+						String userRequested = (String) request[3];
+						space.put("serverresponse", action, userRequesting, Server.users.get(userRequested));
+					}
+				}
+			} catch (InterruptedException e) {
+				e.printStackTrace();
+			}
+		}
+	}
 
 /*
  * static class printChat implements Runnable { Space chat;
@@ -66,8 +93,10 @@ public class Server {
 class lobbyButler implements Runnable {
 	SpaceRepository rep;
 	Space startSpace;
+	HashMap<String, String> users;
 
-	public lobbyButler(SpaceRepository rep, Space startSpace) {
+	public lobbyButler(HashMap<String, String> users, SpaceRepository rep, Space startSpace) {
+		this.users = users;
 		this.rep = rep;
 		this.startSpace = startSpace;
 	}
@@ -86,7 +115,7 @@ class lobbyButler implements Runnable {
 				if (command.equals("j")) {
 					new Thread(new joinLobby(rep, startSpace, lobbyName, userID)).start();
 				} else if (command.equals("h")) {
-					new Thread(new createLobby(rep, startSpace, lobbyName, userID)).start();
+					new Thread(new createLobby(rep, startSpace, lobbyName, userID, users)).start();
 				} else {
 					startSpace.put("error", userID, "Unknown command \"" + command + "\", please try again");
 				}
@@ -102,8 +131,10 @@ class createLobby implements Runnable {
 	String lobbyName;
 	Space startSpace;
 	String userID;
+	HashMap<String,String> users;
 
-	public createLobby(SpaceRepository rep, Space startSpace, String lobbyName, String userID) {
+	public createLobby(SpaceRepository rep, Space startSpace, String lobbyName, String userID, HashMap<String,String> users) {
+		this.users = users;
 		this.rep = rep;
 		this.lobbyName = lobbyName;
 		this.startSpace = startSpace;
@@ -124,6 +155,7 @@ class createLobby implements Runnable {
 				createdLobby.put("lobbystatus", "public");
 				
 				(new joinLobby(rep, startSpace, lobbyName, userID)).run();
+				new Thread(new listenLobby(createdLobby)).start();
 			}
 		} catch (InterruptedException e) {
 			e.printStackTrace();
