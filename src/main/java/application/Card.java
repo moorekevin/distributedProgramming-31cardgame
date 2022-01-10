@@ -10,17 +10,16 @@ public class Card {
 	}
 
 	public enum Suit {
-		CLUBS("♣"), DIAMONDS("♦"), HEARTS("♥"), SPADES("♠");
+		CLUBS('♣'), DIAMONDS('♦'), HEARTS('♥'), SPADES('♠');
 
-		private String custom;
+		private char symbol;
 
-		private Suit(String custom) {
-			this.custom = custom;
+		private Suit(char symbol) {
+			this.symbol = symbol;
 		}
 
-		@Override
-		public String toString() {
-			return custom;
+		public char getSymbol() {
+			return symbol;
 		}
 	}
 
@@ -48,6 +47,6 @@ public class Card {
 		// A,2,3,...,Q,K
 		String numChar = num.ordinal() + 1 == 13 ? "K" : num.ordinal() + 1 == 12 ? "Q" : num.ordinal() + 1 == 11 ? "J" : num.ordinal() + 1 == 1 ? "A" : "" + (num.ordinal() + 1);
 		
-		return suit + numChar;
+		return suit.getSymbol() + numChar;
 	}
 }

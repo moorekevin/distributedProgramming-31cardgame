@@ -15,6 +15,7 @@ import application.Card.Suit;
 public class Player {
 	private String username;
 	private String id;
+	private String lobbyName;
 	private Card cardInUse = null;
 	private final int START_GATE = 9002;
 	private final String START_NAME = "startSpace";
@@ -66,7 +67,7 @@ public class Player {
 			command = getInput("Do you want to (h)ost or (j)oin a lobby?").toLowerCase();
 		} while (!command.equals("h") && !command.equals("j"));
 
-		String lobbyName = getInput("What is the name of the lobby?\n Spaces will get replaced with \"_\"")
+		lobbyName = getInput("What is the name of the lobby?\n Spaces will get replaced with \"_\"")
 				.toLowerCase().replaceAll("\\s+", "_");
 
 		startSpace.put("lobbyrequest", id, command, lobbyName);
@@ -122,10 +123,13 @@ public class Player {
 
 		while (true) {
 			String command = getInput("Do you want to (s)tart the game").toLowerCase(); // TODO: or (e)xit lobby?
-			// TODO:Check if there is at least 2 players otherwise dont allow start
 			if (command.equals("s")) {
-				lobbySpace.get(new ActualField("lobbystatus"), new ActualField("public"));
-				lobbySpace.put("lobbystatus", "private");
+				startSpace.put("lobbyrequest", id, command, lobbyName);
+				
+				Object[] t = startSpace.get(new ActualField("lobbyinfo"), new FormalField(String.class), new ActualField(id), new FormalField(String.class));
+				if (printError((String) t[1], (String) t[3])) {
+					continue;
+				}
 				break;
 			}
 			/*
