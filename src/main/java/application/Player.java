@@ -67,8 +67,8 @@ public class Player {
 			command = getInput("Do you want to (h)ost or (j)oin a lobby?").toLowerCase();
 		} while (!command.equals("h") && !command.equals("j"));
 
-		lobbyName = getInput("What is the name of the lobby?\n Spaces will get replaced with \"_\"")
-				.toLowerCase().replaceAll("\\s+", "_");
+		lobbyName = getInput("What is the name of the lobby?\n Spaces will get replaced with \"_\"").toLowerCase()
+				.replaceAll("\\s+", "_");
 
 		startSpace.put("lobbyrequest", id, command, lobbyName);
 
@@ -125,8 +125,9 @@ public class Player {
 			String command = getInput("Do you want to (s)tart the game").toLowerCase(); // TODO: or (e)xit lobby?
 			if (command.equals("s")) {
 				startSpace.put("lobbyrequest", id, command, lobbyName);
-				
-				Object[] t = startSpace.get(new ActualField("lobbyinfo"), new FormalField(String.class), new ActualField(id), new FormalField(String.class));
+
+				Object[] t = startSpace.get(new ActualField("lobbyinfo"), new FormalField(String.class),
+						new ActualField(id), new FormalField(String.class));
 				if (printError((String) t[1], (String) t[3])) {
 					continue;
 				}
@@ -143,7 +144,7 @@ public class Player {
 	}
 
 	private void startPlaying() throws InterruptedException {
-		
+
 		// Get dealt cards
 		Card[] initialHand = (Card[]) (lobbySpace.get(new ActualField("dealingcards"), new ActualField(id),
 				new FormalField(Card[].class)))[2];
@@ -156,15 +157,19 @@ public class Player {
 			messageTokens.get(new ActualField("printedturn"));
 
 			displayHand(getHand()); // 3
+			if (has31(getHand())) {
+				doAnAction("31");
+			}
+
 			draw(); // +1
 			discard(getHand()); // 4
 			displayHand(getHand());
 
-			if (!has31(getHand())) {
-				knockOption();
-			} else {
+			if (has31(getHand())) {
 				doAnAction("31");
 			}
+
+			knockOption();
 			System.out.println("END OF TURN");
 
 		}
@@ -212,6 +217,7 @@ public class Player {
 	}
 
 	private void knockOption() throws InterruptedException {
+		// TODO: Should not be able to knock if someone else already has
 		getToken("chooseknock");
 		String instruction = "Do you wish to (k)nock or (d)on't knock?";
 		getTwoCommands("k", "d", instruction, "knock", "dontknock");
@@ -265,78 +271,86 @@ public class Player {
 	// Success: (response, id, action, "success", "You have picked a card!", card);
 	// Fail: (response, id, action, "error", "Illegal command", null)
 
-	private void doAnActionKnock(String action) throws InterruptedException { // knock knock
-		lobbySpace.put("action", action, id);
-		Object[] response = (lobbySpace.get(new ActualField("response"), new ActualField(id), new ActualField(action),
-				new FormalField(String.class), new FormalField(String.class)));
-		String succeded = (String) response[3];
-		String gameMessage = (String) response[4];
-		if (printError(succeded, gameMessage)) {
-			// TODO: Needs to do something Error occured
-
-		} else {
-			System.out.println(gameMessage);
-		}
-	}
-
-	private Card doAnAction1(String action) throws InterruptedException { // draw card
-		lobbySpace.put("action", action, id);
-		Object[] response = (lobbySpace.get(new ActualField("response"), new ActualField(id), new ActualField(action),
-				new FormalField(String.class), new FormalField(String.class), new FormalField(Card.class)));
-		String succeded = (String) response[3];
-		String gameMessage = (String) response[4];
-		if (printError(succeded, gameMessage)) {
-			// TODO: Needs to do something Error occured
-
-		} else {
-			System.out.println(gameMessage);
-		}
-		return (Card) response[5];
-	}
-
-	private void doAnAction2(String action, Card card) throws InterruptedException { // discard card
-		lobbySpace.put("action", action, id);
-		lobbySpace.get(new ActualField("response"), new ActualField(action), new ActualField(id),
-				new ActualField("ok"));
-		lobbySpace.put("action", action, id, card);
-
-		Object[] response = (lobbySpace.get(new ActualField("response"), new ActualField(id), new ActualField(action),
-				new FormalField(String.class), new FormalField(String.class)));
-
-		String succeded = (String) response[3];
-		String gameMessage = (String) response[4];
-		if (printError(succeded, gameMessage)) {
-			// TODO: Needs to do something Error occured
-
-		} else {
-			System.out.println(gameMessage);
-		}
-	}
+//	private void doAnActionKnock(String action) throws InterruptedException { // knock knock
+//		lobbySpace.put("action", action, id);
+//		Object[] response = (lobbySpace.get(new ActualField("response"), new ActualField(id), new ActualField(action),
+//				new FormalField(String.class), new FormalField(String.class)));
+//		String succeded = (String) response[3];
+//		String gameMessage = (String) response[4];
+//		if (printError(succeded, gameMessage)) {
+//			// TODO: Needs to do something Error occured
+//
+//		} else {
+//			System.out.println(gameMessage);
+//		}
+//	}
+//
+//	private Card doAnAction1(String action) throws InterruptedException { // draw card
+//		lobbySpace.put("action", action, id);
+//		Object[] response = (lobbySpace.get(new ActualField("response"), new ActualField(id), new ActualField(action),
+//				new FormalField(String.class), new FormalField(String.class), new FormalField(Card.class)));
+//		String succeded = (String) response[3];
+//		String gameMessage = (String) response[4];
+//		if (printError(succeded, gameMessage)) {
+//			// TODO: Needs to do something Error occured
+//
+//		} else {
+//			System.out.println(gameMessage);
+//		}
+//		return (Card) response[5];
+//	}
+//
+//	private void doAnAction2(String action, Card card) throws InterruptedException { // discard card
+//		lobbySpace.put("action", action, id);
+//		lobbySpace.get(new ActualField("response"), new ActualField(action), new ActualField(id),
+//				new ActualField("ok"));
+//		lobbySpace.put("action", action, id, card);
+//
+//		Object[] response = (lobbySpace.get(new ActualField("response"), new ActualField(id), new ActualField(action),
+//				new FormalField(String.class), new FormalField(String.class)));
+//
+//		String succeded = (String) response[3];
+//		String gameMessage = (String) response[4];
+//		if (printError(succeded, gameMessage)) {
+//			// TODO: Needs to do something Error occured
+//
+//		} else {
+//			System.out.println(gameMessage);
+//		}
+//	}
 
 	private void doAnAction(String action) throws InterruptedException { // discard card
 		lobbySpace.put("action", action, id);
 		Object[] response = null;
-		if (action.equals("pickshuffled") || action.equals("pickdiscarded")) {
+
+		switch (action) {
+		case "pickshuffled":
+		case "pickdiscarded":
 			response = (lobbySpace.get(new ActualField("response"), new ActualField(id), new ActualField(action),
 					new FormalField(String.class), new FormalField(String.class), new FormalField(Card.class)));
 			cardInUse = (Card) response[5];
+			break;
 
-		} else if (action.equals("discard")) {  
+		case "discard":
 			lobbySpace.get(new ActualField("response"), new ActualField(action), new ActualField(id),
 					new ActualField("ok"));
 			lobbySpace.put("action", action, id, cardInUse);
 			response = (lobbySpace.get(new ActualField("response"), new ActualField(id), new ActualField(action),
 					new FormalField(String.class), new FormalField(String.class)));
+			break;
 
-		} else if (action.equals("knock") || action.equals("dontknock")) {
+		case "dontknock":
+		case "knock":
+		case "31":
 			response = (lobbySpace.get(new ActualField("response"), new ActualField(id), new ActualField(action),
 					new FormalField(String.class), new FormalField(String.class)));
-
-		} else {
-
-			// Error stuff
+			break;
+			
+		default:
+			// TODO: Error stuff
 			return;
 		}
+
 		// TODO: Maybe just delete this part
 		String succeded = (String) response[3];
 		String gameMessage = (String) response[4];
@@ -353,7 +367,7 @@ public class Player {
 			while (true) {
 				try {
 					String turnid = (String) (lobbySpace.get(new ActualField("whosturn"), new ActualField(id),
-								new FormalField(String.class))[2]);
+							new FormalField(String.class))[2]);
 					if (turnid.equals(id)) {
 						System.out.println("It is now your turn");
 					} else {
