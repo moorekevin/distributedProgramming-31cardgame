@@ -9,6 +9,9 @@ import java.util.Scanner;
 
 import org.jspace.*;
 
+import application.Card.Num;
+import application.Card.Suit;
+
 public class Player {
 	private String id;
 	private final int START_GATE = 9002;
@@ -55,7 +58,6 @@ public class Player {
 		}
 	}
 
-	// TODO: when asking h/j, handle miss-input
 	private void readStartOption() throws InterruptedException, IOException {
 		String command;
 		do {
@@ -148,6 +150,7 @@ public class Player {
 			displayHand(getHand()); // 3
 			draw(); // +1
 			discard(getHand()); // 4
+			displayHand(getHand());
 
 			if (!has31(getHand())) {
 				knockOption();
@@ -166,7 +169,7 @@ public class Player {
 
 	private void displayHand(List<Object[]> allCards) {
 		System.out.println("You have the following cards: ");
-		int i = 0;
+		int i = 1;
 		for (Object[] obj : allCards) {
 			Card card = ((Card) obj[0]);
 			System.out.print("(" + i + "): " + card.toString() + " | ");
@@ -181,7 +184,7 @@ public class Player {
 
 	private void discard(List<Object[]> allCards) throws InterruptedException {
 		getToken("discardacard");
-
+		displayHand(getHand());
 		int cardNumber = Integer.parseInt(getInput("Which card would you like to discard (1),(2),(3),(4)?")) - 1;
 		while (cardNumber < 0 || cardNumber > 3) {
 			printUnknownCommand("" + cardNumber);
@@ -221,35 +224,36 @@ public class Player {
 	}
 
 	private void draw() throws InterruptedException {
-		Object drawnAction = null;
-		String instruction = "Draw from (s)huffled pile or (d)iscarded pile";
+		Card drawnAction = null;
+		Card topOfDiscarded = null;
+		// query top of discarded pile
+		String instruction = "Draw from (s)huffled pile or (d)iscarded pile: " + topOfDiscarded; // Show discarded pile top
 		drawnAction = getTwoCommands("s", "d", instruction, "pickshuffled", "pickdiscarded");
-		handSpace.put((Card) drawnAction);
+		handSpace.put(drawnAction);
 	}
 
-	private Object getTwoCommands(String command1, String command2, String instruction, String action1, String action2)
+	private Card getTwoCommands(String command1, String command2, String instruction, String action1, String action2)
 			throws InterruptedException {
 		String command = getInput(instruction).toLowerCase();
 		while (!(command.equals(command1) || command.equals(command2))) {
 			printUnknownCommand(command);
 			command = getInput("Try again: " + instruction).toLowerCase();
 		}
-		Object respondedObject = null;
+		Card responded = null;
 		if (command.equals(command1))
-			respondedObject = doAnAction(action1, null);
+			responded = doAnAction(action1);
 		if (command.equals(command2))
-			respondedObject = doAnAction(action2, null);
-		return respondedObject;
+			responded = doAnAction(action2);
+		return responded;
 	}
 
 	// Success: (response, id, action, "success", "You have picked a card!", card);
 	// Fail: (response, id, action, "error", "Illegal command", null)
-
-	private Object doAnAction(String action, Object optionalActionObject) throws InterruptedException {
-		lobbySpace.put("action", action, id, optionalActionObject);
-
+	
+	private Card doAnAction(String action) throws InterruptedException { // draw card
+		lobbySpace.put("action", action, id);
 		Object[] response = (lobbySpace.get(new ActualField("response"), new ActualField(id), new ActualField(action),
-				new FormalField(String.class), new FormalField(String.class), new FormalField(Object.class)));
+				new FormalField(String.class), new FormalField(String.class), new FormalField(Card.class)));
 		String succeded = (String) response[3];
 		String gameMessage = (String) response[4];
 		if (printError(succeded, gameMessage)) {
@@ -258,7 +262,25 @@ public class Player {
 		} else {
 			System.out.println(gameMessage);
 		}
-		return response[5]; // TODO: Might return null
+		return (Card) response[5]; 
+	}
+
+	private void doAnAction(String action, Card card) throws InterruptedException { // discard card
+		lobbySpace.put("action", action, id);
+		lobbySpace.get(new ActualField("response"), new ActualField(action), new ActualField(id), new ActualField("ok"));
+		lobbySpace.put("action", action, id, card);
+
+		Object[] response = (lobbySpace.get(new ActualField("response"), new ActualField(id), new ActualField(action),
+				new FormalField(String.class), new FormalField(String.class)));
+				
+		String succeded = (String) response[3];
+		String gameMessage = (String) response[4];
+		if (printError(succeded, gameMessage)) {
+			// TODO: Needs to do something Error occured
+
+		} else {
+			System.out.println(gameMessage);
+		}
 	}
 
 	class getMessagesFromServer implements Runnable {

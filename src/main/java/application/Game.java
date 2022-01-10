@@ -23,7 +23,7 @@ public class Game implements Runnable {
 		}
 		// Add one card to discard pile
 		Card card = (Card) shuffleDeck.get(new FormalField(Card.class))[0];
-		discardDeck.put(card);
+		discardDeck.put(card); // TODO: show discarded pile to player
 	}
 
 	public void run() {
@@ -43,32 +43,36 @@ public class Game implements Runnable {
 
 			int i = 0;
 			// Player 0 starts
-			lobbySpace.put("token", "startOfTurn", (String) membersID.get(i)[1]);
+			lobbySpace.put("token", "startofturn", (String) membersID.get(i)[1]);
 			
 			String knockedPlayer = null;
 
 			while (true) {
+				System.out.println("----player: " + i);
 				// Success: (response, id, action, "success", "You have picked a card!", card);
 				// Fail: (response, id, action, "error", "Illegal command", null)
 
 				String id = (String) membersID.get(i)[1];
-
 				Object[] t = lobbySpace.get(new ActualField("action"), new FormalField(String.class),
-						new ActualField((String) membersID.get(0)[1]), new FormalField(Card.class));
-
+						new ActualField(id));              // <-- 
+					
+				System.out.println("Got action from player");
 				String action = (String) t[1];
 
 				if (action.equals("pickshuffled") || action.equals("pickdiscarded")) {
 					// Picks from either shuffled or discarded deck
 					Card card = (Card) (action.equals("pickshuffled") ? shuffleDeck.get(new FormalField(Card.class))[0]
 							: discardDeck.get(new FormalField(Card.class))[0]);
-
+							
 					lobbySpace.put("response", id, action, "success", "You have picked a card!", card);
 					lobbySpace.put("token", "discardacard", id); // hasDiscardedCards
 				} else if (action.equals("discard")) {
+					lobbySpace.put("response", action, id, "ok");
+					t = lobbySpace.get(new ActualField("action"), new FormalField(String.class),
+						new ActualField(id), new FormalField(Card.class));
 					Card card = (Card) t[3];
 					discardDeck.put(card);
-					lobbySpace.put("response", id, action, "success", "You have discarded a card!", card);
+					lobbySpace.put("response", id, action, "success", "You have discarded a card!");
 					lobbySpace.put("token", "chooseknock", id); // hasDiscardedCards
 				} else if (action.equals("dontknock") || action.equals("knock")) {
 					if (action.equals("knock")) {
@@ -101,7 +105,7 @@ public class Game implements Runnable {
 		}
 	}
 
-	private void endGame() {
-		System.out.println("End of game");
+	private void endGame() throws InterruptedException {
+		lobbySpace.put("generalmessage", "Game has ended");
 	}
 }
