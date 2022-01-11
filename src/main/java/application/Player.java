@@ -30,6 +30,7 @@ public class Player {
 			username = getInput("Enter your username");
 
 			startSpace = new RemoteSpace(uri);
+			
 			/*
 			 * RemoteSpace lobby = new RemoteSpace(uriLobby); lobby.get("turn", playerid);
 			 * lobby.put("drawfromshuffle", playerid); ...do stuff... lobby.put("endturn",
@@ -248,7 +249,7 @@ public class Player {
 		topOfDiscarded = (Card) q[2];
 
 		String instruction = "Draw from (s)huffled pile or (d)iscarded pile: " + topOfDiscarded; // Show discarded pile
-																									// top
+																								 // top
 		getTwoCommands("s", "d", instruction, "pickshuffled", "pickdiscarded");
 		handSpace.put(cardInUse);
 	}
@@ -366,17 +367,28 @@ public class Player {
 		public void run() {
 			while (true) {
 				try {
-					String turnid = (String) (lobbySpace.get(new ActualField("whosturn"), new ActualField(id),
-							new FormalField(String.class))[2]);
-					if (turnid.equals(id)) {
-						System.out.println("It is now your turn");
-					} else {
-						lobbySpace.put("serverrequest", "username", id, turnid);
-						String username = (String) (lobbySpace.get(new ActualField("serverresponse"),
-								new ActualField("username"), new ActualField(id), new FormalField(String.class)))[3];
-						System.out.println("It is now player " + username + "'s turn");
+					Object[] req = lobbySpace.get(new ActualField("info"), new ActualField(id), new FormalField(String.class), new FormalField(String.class));
+					String turnid = (String) req[3];
+					if (req[2].equals("whosturn")) {
+						if (turnid.equals(id)) {
+							System.out.println("It is now your turn");
+							messageTokens.put("printedturn");
+						} else {
+							lobbySpace.put("serverrequest", "username", id, turnid);
+							String username = (String) (lobbySpace.get(new ActualField("serverresponse"),
+									new ActualField("username"), new ActualField(id), new FormalField(String.class)))[3];
+							System.out.println("It is now player " + username + "'s turn");
+						}
+					} else if (req[2].equals("whosknocked")) {
+						if (!turnid.equals(id)) {
+							lobbySpace.put("serverrequest", "username", id, turnid);
+							String username = (String) (lobbySpace.get(new ActualField("serverresponse"),
+									new ActualField("username"), new ActualField(id), new FormalField(String.class)))[3];
+							System.out.println("Be aware! Player " + username + " has knocked. This is the last round!");
+						}
 					}
-					messageTokens.put("printedturn");
+					
+					
 				} catch (InterruptedException e) {
 					e.printStackTrace();
 				}

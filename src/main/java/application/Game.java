@@ -60,7 +60,7 @@ public class Game implements Runnable {
 				String id = membersID.get(i);
 
 				if (!lastPlayer.equals(id)) { // Tells all other players whose turn it is
-					tellTurns(membersID.get(i));
+					tellTurns("whosturn", membersID.get(i));
 					lastPlayer = id;
 				}
 
@@ -97,6 +97,7 @@ public class Game implements Runnable {
 					if (action.equals("knock")) {
 						knockedPlayer = id;
 						lobbySpace.put("response", id, action, "success", "You have knocked and ended your turn!");
+						tellTurns("whosknocked",id);
 						// TODO: send a message to all players that a player with username has knocked
 					} else {
 						lobbySpace.put("response", id, action, "success", "You have ended your turn without knocking!");
@@ -131,9 +132,9 @@ public class Game implements Runnable {
 		}
 	}
 
-	private void tellTurns(String id) throws InterruptedException {
+	private void tellTurns(String what, String id) throws InterruptedException {
 		for (String member : membersID) {
-			lobbySpace.put("whosturn", member, id);
+			lobbySpace.put("info", member, what, id);
 		}
 	}
 
