@@ -91,17 +91,17 @@ class playerActivity implements Runnable {
 			while(true) {
 				Thread.sleep(30000); // Waiting to ping players again
 				space.put("userpingrequest", playerID);
-				System.out.println("Pinging " + playerID);
+//				System.out.println("Pinging " + playerID);
 				Thread.sleep(5000); // Waiting for player response
-				System.out.println("Getting response for " + playerID);
+//				System.out.println("Getting response for " + playerID);
 				Object[] response = space.getp(new ActualField("userpingresponse"), new ActualField(playerID));
 				if (response == (null)) {
 					lobby.put("inactiveplayer", playerID, Server.users.get(playerID));
 					Server.users.remove(playerID);
-					System.out.println("Didnt get response for " + playerID);
+//					System.out.println("Didnt get response for " + playerID);
 					break;
 				} else {
-					System.out.println("Got response for " + playerID);
+//					System.out.println("Got response for " + playerID);
 				}
 			}
 			

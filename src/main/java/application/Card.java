@@ -38,8 +38,8 @@ public class Card {
 		return points;
 	}
 
-	public String getSuit() {
-		return "" + suit;
+	public Suit getSuit() {
+		return suit;
 	}
 
 	@Override

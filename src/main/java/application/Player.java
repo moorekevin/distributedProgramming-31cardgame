@@ -1,16 +1,16 @@
+// TODO: Add extra spaces between text in terminal
+
 package application;
 
 import java.io.IOException;
 import java.net.UnknownHostException;
-import java.util.ArrayList;
-import java.util.LinkedList;
 import java.util.List;
 import java.util.Scanner;
 
-import org.jspace.*;
-
-import application.Card.Num;
-import application.Card.Suit;
+import org.jspace.ActualField;
+import org.jspace.FormalField;
+import org.jspace.RemoteSpace;
+import org.jspace.SequentialSpace;
 
 public class Player {
 	private String username;
@@ -83,18 +83,17 @@ public class Player {
 			if (command.equals("j")) {
 				System.out.println("List of available lobbies:");
 				for (int i = 0; i < lobbyList.size(); i++) {
-					System.out.println(" " + (i + 1) + ") " + ((String) lobbyList.get(i)[1]) + 
-							" (" + (int) lobbyList.get(i)[2] + "/4)");
+					System.out.println(" " + (i + 1) + ") " + ((String) lobbyList.get(i)[1]) + " ("
+							+ (int) lobbyList.get(i)[2] + "/4)");
 				}
 				System.out.println();
 			}
-			lobbyName = getInput("What is the name of the lobby?").toLowerCase()
-					.replaceAll("\\s+", "_");
+			lobbyName = getInput("What is the name of the lobby?").toLowerCase().replaceAll("\\s+", "_");
 
 			startSpace.put("lobbyrequest", id, command, lobbyName);
 
-			Object[] t = startSpace.query(new ActualField("lobbyinfo"), new FormalField(String.class), new ActualField(id),
-					new FormalField(String.class));
+			Object[] t = startSpace.query(new ActualField("lobbyinfo"), new FormalField(String.class),
+					new ActualField(id), new FormalField(String.class));
 			if (((String) t[1]).equals("error")) {
 				System.out.println((String) t[3]);
 				startSpace.get(new ActualField("lobbyinfo"), new FormalField(String.class), new ActualField(id),
@@ -259,7 +258,7 @@ public class Player {
 	}
 
 	private boolean has31(List<Object[]> allCards) {
-		String suit = ((Card) allCards.get(0)[0]).getSuit();
+		String suit = "" + ((Card) allCards.get(0)[0]).getSuit();
 		boolean sameSuit = false;
 		int points = 0;
 
@@ -291,6 +290,7 @@ public class Player {
 	private void doAnAction(String action) throws InterruptedException { // discard card
 		lobbySpace.put("action", action, id);
 		Object[] response = null;
+		
 		switch (action) {
 		case "pickshuffled":
 		case "pickdiscarded":
@@ -316,6 +316,7 @@ public class Player {
 		case "31":
 			response = (lobbySpace.get(new ActualField("response"), new ActualField(id), new ActualField(action),
 					new FormalField(String.class), new FormalField(String.class)));
+//			lobbySpace.put("action", action, id, cardInUse);
 			break;
 
 		default:
@@ -339,7 +340,8 @@ public class Player {
 					Object[] req = lobbySpace.get(new ActualField("info"), new ActualField(id),
 							new FormalField(String.class), new FormalField(String.class));
 					String playerID = (String) req[3];
-					if (req[2].equals("whosturn")) {
+					switch ((String) req[2]) {
+					case "whosturn":
 						if (playerID.equals(id)) {
 							System.out.println("It is now your turn");
 							messageTokens.put("printedturn");
@@ -350,22 +352,65 @@ public class Player {
 									new FormalField(String.class)))[3];
 							System.out.println("It is now player " + username + "'s turn");
 						}
-					} else if (req[2].equals("whosknocked")) {
+						break;
+
+					case "whosknocked":
 						if (!playerID.equals(id)) {
 							lobbySpace.put("serverrequest", "username", id, playerID);
 							String username = (String) (lobbySpace.get(new ActualField("serverresponse"),
 									new ActualField("username"), new ActualField(id),
 									new FormalField(String.class)))[3];
-							System.out
-									.println("Be aware! Player " + username + " has knocked. This is the last round!");
+							System.out.println("Be aware! Player " + username +
+									" has knocked. This is the last round!");
 						}
-					} else if (req[2].equals("inactiveplayer")) {
+						break;
+
+					case "inactiveplayer":
 						// PlayerID is not ID but a username here
 						System.out.println("Player " + playerID + " has left the game. Game restarting");
-					} else if (req[2].equals("won")) {
+						break;
+
+					case "won":
+					
+						if (playerID.equals(id)) {
+							System.out.println("Congratulations! You have won this round!");
+						} else {
+							lobbySpace.put("serverrequest", "username", id, playerID);
+							String username = (String) (lobbySpace.get(new ActualField("serverresponse"),
+									new ActualField("username"), new ActualField(id),
+									new FormalField(String.class)))[3];
+							System.out.println("Player " + username + " won this round!");
+						}
+						      //  (scoreboard, id, memberList, score)
+						Object[] sb = lobbySpace.get(new ActualField("scoreboard"), new ActualField(id), new FormalField(String[].class),
+								new FormalField(Integer[].class));
+						      System.out.println(2);
 						
-					} else if (req[2].equals("requestcards")) {
+						System.out.println("Scoreboard:");
+						String[] members = (String[]) sb[2];
+						Integer [] scores = (Integer[]) sb[3];
+						for (int i = 0; i < members.length; i++){
+							String id2 = (String) members[i];
+							lobbySpace.put("serverrequest", "username", id, id2);
+							
+							String username = (String) (lobbySpace.get(new ActualField("serverresponse"), new ActualField("username"), new ActualField(id),
+									new FormalField(String.class)))[3];
+							System.out.println(" " + username + ": " + scores[i]);
+						}
+						break;
+					case "requestcards":
+						List<Object[]> cardList = handSpace.queryAll(new FormalField(Card.class));
+						Card[] cards = new Card[3];
+						for (int i = 0; i < cards.length; i++) {
+							cards[i] = (Card) cardList.get(0)[0];
+						}
 						
+						lobbySpace.put("playerhand", id, cards);
+						
+						break;
+					default:
+						// Error Stuff
+						break;
 					}
 
 				} catch (InterruptedException e) {
@@ -380,7 +425,7 @@ public class Player {
 			while (true) {
 				try {
 					startSpace.get(new ActualField("userpingrequest"), new ActualField(id));
-					startSpace.put("userpingresponse",id);
+					startSpace.put("userpingresponse", id);
 				} catch (InterruptedException e) {
 					e.printStackTrace();
 				}
