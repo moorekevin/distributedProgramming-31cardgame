@@ -1,6 +1,6 @@
 package application;
 
-import java.util.ArrayList;
+import java.util.HashMap;
 import java.util.List;
 
 import org.jspace.*;
@@ -9,12 +9,12 @@ public class Game implements Runnable {
 	private RandomSpace shuffleDeck = new RandomSpace();
 	private StackSpace discardDeck = new StackSpace();
 	private Space lobbySpace;
-	private List<String> membersID;
+	private HashMap<String, Integer> membersID;
 	// TODO: Add a scoreboard hashmap/space
 
 	public Game(Space lobbySpace) throws InterruptedException {
 		this.lobbySpace = lobbySpace;
-		this.membersID = new ArrayList<String>();
+		this.membersID = new HashMap<String,Integer>();
 
 		// Add 52 cards to shuffleDeck
 		for (Card.Num num : Card.Num.values()) {
@@ -25,7 +25,7 @@ public class Game implements Runnable {
 		}
 		// Add one card to discard pile
 		Card card = (Card) shuffleDeck.get(new FormalField(Card.class))[0];
-		discardDeck.put(card); // TODO: show discarded pile to player
+		discardDeck.put(card);
 	}
 
 	public void run() {
@@ -33,10 +33,10 @@ public class Game implements Runnable {
 			// Deal 3 cards to all joined members
 			List<Object[]> tList = lobbySpace.queryAll(new ActualField("lobbymember"), new FormalField(String.class));
 			for (Object[] member : tList) {
-				membersID.add((String) member[1]);
+				membersID.put((String) member[1],0);
 			}
-
-			for (String member : membersID) {
+			
+			for(String member : membersID.keySet()){
 				Card[] initialHand = new Card[3];
 				String id = member;
 				for (int i = 0; i < 3; i++) {
@@ -45,10 +45,10 @@ public class Game implements Runnable {
 				}
 				lobbySpace.put("dealingcards", id, initialHand);
 			}
-
+			
 			int i = 0;
 			// Player 0 starts
-			lobbySpace.put("token", "startofturn", (String) membersID.get(i));
+			lobbySpace.put("token", "startofturn", (String) membersID.keySet().toArray()[i]);
 			// lobbySpace.put(new ActualField("playerturn",id , username);
 			String knockedPlayer = null;
 			String lastPlayer = "";
@@ -57,15 +57,15 @@ public class Game implements Runnable {
 				// Success: (response, id, action, "success", "You have picked a card!", card);
 				// Fail: (response, id, action, "error", "Illegal command", null)
 
-				String id = membersID.get(i);
+				String id = (String) membersID.keySet().toArray()[i];
 
 				if (!lastPlayer.equals(id)) { // Tells all other players whose turn it is
-					tellTurns("whosturn", membersID.get(i));
+					tellTurns("whosturn", id);
 					lastPlayer = id;
 				}
 
 				Object[] t = lobbySpace.get(new ActualField("action"), new FormalField(String.class),
-						new ActualField(id)); // <--
+						new ActualField(id));
 
 				String action = (String) t[1];
 
@@ -109,7 +109,7 @@ public class Game implements Runnable {
 						i -= membersID.size();
 					}
 
-					String nextId = (String) membersID.get(i);
+					String nextId = (String) membersID.keySet().toArray()[i];
 
 					if (nextId.equals(knockedPlayer)) {
 						endGame();
@@ -118,6 +118,11 @@ public class Game implements Runnable {
 					}
 					break;
 				case "31":
+					membersID.put(id, membersID.get(id) + 1);
+					for(String member : membersID.keySet()) {
+						lobbySpace.put("info", member, "31stuff", id);
+					}
+					
 					endGame();
 					break;
 				default:
@@ -133,15 +138,12 @@ public class Game implements Runnable {
 	}
 
 	private void tellTurns(String what, String id) throws InterruptedException {
-		for (String member : membersID) {
+		for(String member : membersID.keySet()) {
 			lobbySpace.put("info", member, what, id);
 		}
 	}
 
 	private void endGame() throws InterruptedException {
-		lobbySpace.put("generalmessage", "Game has ended");
-		for (String member : membersID) {
-			//lobbySpace.put("")
-		}
+		
 	}
 }
