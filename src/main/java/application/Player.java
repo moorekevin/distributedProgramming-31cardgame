@@ -139,7 +139,7 @@ public class Player {
 	}
 
 	private void startPlaying() throws InterruptedException {
-		
+
 		// Get dealt cards
 		Card[] initialHand = (Card[]) (lobbySpace.get(new ActualField("dealingcards"), new ActualField(id),
 				new FormalField(Card[].class)))[2];
@@ -152,15 +152,19 @@ public class Player {
 			messageTokens.get(new ActualField("printedturn"));
 
 			displayHand(getHand()); // 3
+			if (has31(getHand())) {
+				doAnAction("31");
+			}
+
 			draw(); // +1
 			discard(getHand()); // 4
 			displayHand(getHand());
 
-			if (!has31(getHand())) {
-				knockOption();
-			} else {
+			if (has31(getHand())) {
 				doAnAction("31");
 			}
+
+			knockOption();
 			System.out.println("END OF TURN");
 
 		}
@@ -223,6 +227,7 @@ public class Player {
 
 
 	private void knockOption() throws InterruptedException {
+		// TODO: Should not be able to knock if someone else already has
 		getToken("chooseknock");
 		String instruction = "Do you wish to (k)nock or (d)on't knock?";
 		getTwoCommands("k", "d", instruction, "knock", "dontknock");
@@ -268,10 +273,9 @@ public class Player {
 					new FormalField(String.class), new FormalField(String.class), new FormalField(Card.class)));
 			
 			cardInUse = (Card) response[5];
-		}
-		
-		if (action.equals("discard")) {  
-			
+			break;
+
+		case "discard":
 			lobbySpace.get(new ActualField("response"), new ActualField(action), new ActualField(id),
 					new ActualField("ok"));
 			
@@ -279,15 +283,21 @@ public class Player {
 			
 			response = (lobbySpace.get(new ActualField("response"), new ActualField(id), new ActualField(action),
 					new FormalField(String.class), new FormalField(String.class)));
-		}
-		
-		if (action.equals("knock") || action.equals("dontknock")) {
-			
+			break;
+
+		case "dontknock":
+		case "knock":
+		case "31":
 			response = (lobbySpace.get(new ActualField("response"), new ActualField(id), new ActualField(action),
 					new FormalField(String.class), new FormalField(String.class)));
+			break;
+			
+		default:
+			// TODO: Error stuff
+			return;
 		}
-		
-		
+
+		// TODO: Maybe just delete this part
 		if (((String) response[3]).equals("error")) {
 			printError((String) response[4]);
 		} else {
@@ -302,7 +312,7 @@ public class Player {
 			while (true) {
 				try {
 					String turnid = (String) (lobbySpace.get(new ActualField("whosturn"), new ActualField(id),
-								new FormalField(String.class))[2]);
+							new FormalField(String.class))[2]);
 					if (turnid.equals(id)) {
 						System.out.println("It is now your turn");
 					} else {
