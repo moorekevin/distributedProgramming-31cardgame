@@ -62,7 +62,7 @@ public class Game implements Runnable {
 				String id = (String) membersID.keySet().toArray()[i];
 
 				if (!lastPlayer.equals(id)) { // Tells all other players whose turn it is
-					tellPlayers("whosturn", membersID.get(i));
+					tellPlayers("whosturn", id);
 					lastPlayer = id;
 				}
 
