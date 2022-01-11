@@ -140,7 +140,7 @@ public class Game implements Runnable {
 	}
 
 	private void tellPlayers(String what, String id) throws InterruptedException {
-		for (String member : membersID) {
+		for (String member : membersID.keySet()) {
 			lobbySpace.put("info", member, what, id);
 		}
 	}
