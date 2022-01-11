@@ -140,5 +140,8 @@ public class Game implements Runnable {
 
 	private void endGame() throws InterruptedException {
 		lobbySpace.put("generalmessage", "Game has ended");
+		for (String member : membersID) {
+			//lobbySpace.put("")
+		}
 	}
 }

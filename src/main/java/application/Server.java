@@ -17,10 +17,9 @@ public class Server {
 	public static void main(String[] args) {
 		SpaceRepository rep = new SpaceRepository();
 		SequentialSpace startSpace = new SequentialSpace();
-		SequentialSpace lobbyMembers = new SequentialSpace();
 		// lobbyName , id
 		users = new HashMap<String, String>();
-
+		
 		rep.add("startSpace", startSpace);
 
 		final String gateUri = START_URI + END_URI;
@@ -153,6 +152,7 @@ class createLobby implements Runnable {
 			} else {
 				SequentialSpace createdLobby = new SequentialSpace();
 				rep.add(lobbyName, createdLobby);
+				startSpace.put("lobbyname", lobbyName, 0);
 				System.out.println("Created Lobby \"" + lobbyName + "\" for " + userID);
 
 				createdLobby.put("host", userID);
@@ -202,6 +202,9 @@ class joinLobby implements Runnable {
 					} else { // Success
 						System.out.println("User " + userID + " joining lobby " + lobbyName);
 						String lobbyURI = Server.START_URI + lobbyName + Server.END_URI;
+						Object[] t = startSpace.get(new ActualField("lobbyname"), new ActualField(lobbyName), new FormalField(Integer.class));
+						int cap = (int) t[2] + 1;
+						startSpace.put("lobbyname", lobbyName, cap);
 						startSpace.put("lobbyinfo", "join", userID, lobbyURI);
 					}
 				}

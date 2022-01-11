@@ -73,20 +73,35 @@ public class Player {
 			printError(command);
 			command = getInput("Try again: Do you want to (h)ost or (j)oin a lobby?").toLowerCase();
 		}
-		lobbyName = getInput("What is the name of the lobby?\n Spaces will get replaced with \"_\"").toLowerCase()
-				.replaceAll("\\s+", "_");
 
-		startSpace.put("lobbyrequest", id, command, lobbyName);
-
-		Object[] t = startSpace.query(new ActualField("lobbyinfo"), new FormalField(String.class), new ActualField(id),
-				new FormalField(String.class));
-		if (((String) t[1]).equals("error")) {
-			System.out.println((String) t[3]);
-			startSpace.get(new ActualField("lobbyinfo"), new FormalField(String.class), new ActualField(id),
-					new FormalField(String.class));
+		List<Object[]> lobbyList = startSpace.queryAll(new ActualField("lobbyname"), new FormalField(String.class),
+				new FormalField(Integer.class));
+		if (command.equals("j") && lobbyList.size() == 0) {
+			System.out.println("No available lobbies. Try hosting a server instead!");
 			readStartOption();
-		}
+		} else {
+			if (command.equals("j")) {
+				System.out.println("List of available lobbies:");
+				for (int i = 0; i < lobbyList.size(); i++) {
+					System.out.println(" " + (i + 1) + ") " + ((String) lobbyList.get(i)[1]) + 
+							" (" + (int) lobbyList.get(i)[2] + "/4)");
+				}
+				System.out.println();
+			}
+			lobbyName = getInput("What is the name of the lobby?").toLowerCase()
+					.replaceAll("\\s+", "_");
 
+			startSpace.put("lobbyrequest", id, command, lobbyName);
+
+			Object[] t = startSpace.query(new ActualField("lobbyinfo"), new FormalField(String.class), new ActualField(id),
+					new FormalField(String.class));
+			if (((String) t[1]).equals("error")) {
+				System.out.println((String) t[3]);
+				startSpace.get(new ActualField("lobbyinfo"), new FormalField(String.class), new ActualField(id),
+						new FormalField(String.class));
+				readStartOption();
+			}
+		}
 	}
 
 	@SuppressWarnings("resource")
@@ -209,10 +224,21 @@ public class Player {
 	private void discard(List<Object[]> allCards) throws InterruptedException {
 		getToken("discardacard");
 		displayHand(getHand());
-		
-		int cardNumber = Integer.parseInt(getInput("Which card would you like to discard (1),(2),(3),(4)?")) - 1;
+		String command = getInput("Which card would you like to discard (1),(2),(3),(4)?");
+		int cardNumber;
+		while (true) {
+			try {
+				cardNumber = Integer.parseInt(command) - 1;
+				break;
+			} catch (NumberFormatException e) {
+				printError(command);
+				command = getInput("Try again: Which card would you like to discard (1),(2),(3),(4)?");
+				continue;
+			}
+		}
+
 		while (cardNumber < 0 || cardNumber > 3) {
-			printError("" + cardNumber + 1);
+			printError("" + (cardNumber + 1));
 			cardNumber = Integer.parseInt(getInput("Try again: Which card would you like to discard (1),(2),(3),(4)?"))
 					- 1;
 		}
