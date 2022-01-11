@@ -90,18 +90,22 @@ class playerActivity implements Runnable {
 		try {
 			while(true) {
 				Thread.sleep(30000); // Waiting to ping players again
-				space.put("userpingrequest", playerID);
-//				System.out.println("Pinging " + playerID);
+				space.put("userrequest","ping", playerID);
+				System.out.println("Pinging " + playerID);
 				Thread.sleep(5000); // Waiting for player response
-//				System.out.println("Getting response for " + playerID);
-				Object[] response = space.getp(new ActualField("userpingresponse"), new ActualField(playerID));
+				Object[] response = space.getp(new ActualField("userresponse"),new ActualField("ping"), new ActualField(playerID));
 				if (response == (null)) {
-					lobby.put("inactiveplayer", playerID, Server.users.get(playerID));
-					Server.users.remove(playerID);
-//					System.out.println("Didnt get response for " + playerID);
+					String host = (String) (lobby.query(new ActualField("host"), new FormalField(String.class)))[1];
+					if (host.equals(playerID)) {
+						lobby.put("exitlobby");
+						String lobbyName = (String) (lobby.query(new ActualField("lobbyname"), new FormalField(String.class)))[1];
+						space.get(new ActualField("lobbyname"), new ActualField(lobbyName), new FormalField(Integer.class));
+					} else {
+						lobby.put("inactiveplayer", playerID, Server.users.get(playerID));
+						Server.users.remove(playerID);
+					}
+					System.out.println("Didnt get response for " + playerID);
 					break;
-				} else {
-//					System.out.println("Got response for " + playerID);
 				}
 			}
 			
@@ -188,10 +192,11 @@ class createLobby implements Runnable {
 			} else {
 				SequentialSpace createdLobby = new SequentialSpace();
 				rep.add(lobbyName, createdLobby);
-				startSpace.put("lobbyname", lobbyName, 0);
+				startSpace.put("lobbyname", lobbyName, 0); // Used for giving an overview of which lobbies are available to players
 				System.out.println("Created Lobby \"" + lobbyName + "\" for " + userID);
 
 				createdLobby.put("host", userID);
+				createdLobby.put("lobbyname",lobbyName);
 				createdLobby.put("lobbystatus", "public");
 
 				(new joinLobby(rep, startSpace, lobbyName, userID)).run();
