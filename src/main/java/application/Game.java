@@ -15,6 +15,8 @@ public class Game implements Runnable {
 	public Game(Space lobbySpace) throws InterruptedException {
 		this.lobbySpace = lobbySpace;
 		this.membersID = new ArrayList<String>();
+		
+		new Thread(new checkInactivePlayers()).start();
 
 		// Add 52 cards to shuffleDeck
 		for (Card.Num num : Card.Num.values()) {
@@ -60,7 +62,7 @@ public class Game implements Runnable {
 				String id = membersID.get(i);
 
 				if (!lastPlayer.equals(id)) { // Tells all other players whose turn it is
-					tellTurns("whosturn", membersID.get(i));
+					tellPlayers("whosturn", membersID.get(i));
 					lastPlayer = id;
 				}
 
@@ -97,7 +99,7 @@ public class Game implements Runnable {
 					if (action.equals("knock")) {
 						knockedPlayer = id;
 						lobbySpace.put("response", id, action, "success", "You have knocked and ended your turn!");
-						tellTurns("whosknocked",id);
+						tellPlayers("whosknocked",id);
 						// TODO: send a message to all players that a player with username has knocked
 					} else {
 						lobbySpace.put("response", id, action, "success", "You have ended your turn without knocking!");
@@ -132,7 +134,7 @@ public class Game implements Runnable {
 		}
 	}
 
-	private void tellTurns(String what, String id) throws InterruptedException {
+	private void tellPlayers(String what, String id) throws InterruptedException {
 		for (String member : membersID) {
 			lobbySpace.put("info", member, what, id);
 		}
@@ -140,5 +142,25 @@ public class Game implements Runnable {
 
 	private void endGame() throws InterruptedException {
 		lobbySpace.put("generalmessage", "Game has ended");
+	}
+	
+	class checkInactivePlayers implements Runnable {
+		public void run() {
+			try {
+				Object[] inactivePlayer = lobbySpace.get(new ActualField("inactiveplayer"), new FormalField(String.class), new FormalField(String.class));
+				String id = (String) inactivePlayer[1];
+				String username = (String) inactivePlayer[2];
+				membersID.remove(id);
+				tellPlayers("inactiveplayer", username);
+				endGame();
+				
+				// TODO: Check that they have received and printed message
+				
+			} catch (InterruptedException e) {
+				e.printStackTrace();
+			}
+			
+		}
+		
 	}
 }

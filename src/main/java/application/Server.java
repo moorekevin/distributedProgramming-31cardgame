@@ -1,7 +1,6 @@
 // TODO: max number of lobbies, exit lobby
 package application;
 
-import java.util.ArrayList;
 import java.util.List;
 import java.util.UUID;
 
@@ -17,7 +16,6 @@ public class Server {
 	public static void main(String[] args) {
 		SpaceRepository rep = new SpaceRepository();
 		SequentialSpace startSpace = new SequentialSpace();
-		SequentialSpace lobbyMembers = new SequentialSpace();
 		// lobbyName , id
 		users = new HashMap<String, String>();
 
@@ -56,6 +54,7 @@ class listenLobby implements Runnable {
 
 	public listenLobby(Space space) {
 		this.space = space;
+		
 	}
 
 	public void run() {
@@ -70,6 +69,42 @@ class listenLobby implements Runnable {
 					space.put("serverresponse", action, userRequesting, Server.users.get(userRequested));
 				}
 			}
+		} catch (InterruptedException e) {
+			e.printStackTrace();
+		}
+	}
+}
+
+class playerActivity implements Runnable {
+	Space space;
+	Space lobby;
+	String playerID;
+	
+	public playerActivity(Space space, Space lobby, String playerID) {
+		this.space = space;
+		this.lobby = lobby;
+		this.playerID = playerID;
+	}
+	
+	public void run() {
+		try {
+			while(true) {
+				Thread.sleep(30000); // Waiting to ping players again
+				space.put("userpingrequest", playerID);
+				System.out.println("Pinging " + playerID);
+				Thread.sleep(5000); // Waiting for player response
+				System.out.println("Getting response for " + playerID);
+				Object[] response = space.getp(new ActualField("userpingresponse"), new ActualField(playerID));
+				if (response == (null)) {
+					lobby.put("inactiveplayer", playerID, Server.users.get(playerID));
+					Server.users.remove(playerID);
+					System.out.println("Didnt get response for " + playerID);
+					break;
+				} else {
+					System.out.println("Got response for " + playerID);
+				}
+			}
+			
 		} catch (InterruptedException e) {
 			e.printStackTrace();
 		}
@@ -203,6 +238,8 @@ class joinLobby implements Runnable {
 						System.out.println("User " + userID + " joining lobby " + lobbyName);
 						String lobbyURI = Server.START_URI + lobbyName + Server.END_URI;
 						startSpace.put("lobbyinfo", "join", userID, lobbyURI);
+						// Start pinging user in lobby
+						new Thread(new playerActivity(startSpace, lobby, userID)).start();
 					}
 				}
 			}
@@ -229,7 +266,6 @@ class startLobby implements Runnable {
 
 	public void run() {
 		try {
-			System.out.println("stuff");
 			lobby.get(new ActualField("lobbystatus"), new ActualField("public"));
 			List<Object[]> members = lobby.queryAll(new ActualField("lobbymember"), new FormalField(String.class));
 			if (members.size() < 2) {
