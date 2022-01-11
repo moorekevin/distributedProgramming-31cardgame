@@ -60,13 +60,18 @@ public class Player {
 			e.printStackTrace();
 		}
 	}
+	private boolean isHost() throws InterruptedException {
+		Object[] isHost = lobbySpace.queryp(new ActualField("host"), new ActualField(id));
+		return (isHost != null);
+	}
 
 	private void readStartOption() throws InterruptedException, IOException {
-		String command;
-		do {
-			command = getInput("Do you want to (h)ost or (j)oin a lobby?").toLowerCase();
-		} while (!command.equals("h") && !command.equals("j"));
-
+		String command = getInput("Do you want to (h)ost or (j)oin a lobby?").toLowerCase();
+		if (!(command.equals("h") || command.equals("j"))) {
+				printError(command);
+				readStartOption();
+		}
+		
 		lobbyName = getInput("What is the name of the lobby?\n Spaces will get replaced with \"_\"")
 				.toLowerCase().replaceAll("\\s+", "_");
 
@@ -74,49 +79,38 @@ public class Player {
 
 		Object[] t = startSpace.query(new ActualField("lobbyinfo"), new FormalField(String.class), new ActualField(id),
 				new FormalField(String.class));
-		if (printError((String) t[1], (String) t[3])) {
+		if (((String) t[1]).equals("error")) {
+			System.out.println((String) t[3]);
 			startSpace.get(new ActualField("lobbyinfo"), new FormalField(String.class), new ActualField(id),
 					new FormalField(String.class));
 			readStartOption();
 		}
+	
 	}
-
-	private boolean printError(String checkError, String error) {
-		if (checkError.equals("error")) {
-			System.out.println("ERROR: " + error + "\n");
-			return true;
-		} else {
-			return false;
-		}
-	}
-
+	
 	@SuppressWarnings("resource")
 	private String getInput(String question) {
 		Scanner reader = new Scanner(System.in);
-
 		System.out.print(question + "\n> ");
-		String input = reader.nextLine();
-		return input;
+		return reader.nextLine();
 	}
+
 
 	private void joinLobby() throws InterruptedException, IOException {
 		try {
 			String lobbyURI = (String) (startSpace.get(new ActualField("lobbyinfo"), new ActualField("join"),
 					new ActualField(id), new FormalField(String.class)))[3];
 			lobbySpace = new RemoteSpace(lobbyURI);
-			// lobbySpace.queryAll
+			
 			lobbySpace.put("lobbymember", id);
+			
 			new Thread(new getMessagesFromLobby()).start();
+			
 			System.out.println("Joined lobby. Waiting for game to start\n");
 		} catch (UnknownHostException e) {
-			// Should not happen
-			printError("error", "Cannot find lobby, check URI");
+			
+			printError("Cannot find lobby, check URI");
 		}
-	}
-
-	private boolean isHost() throws InterruptedException {
-		Object[] isHost = lobbySpace.queryp(new ActualField("host"), new ActualField(id));
-		return (isHost != null);
 	}
 
 	private void createGame() throws InterruptedException {
@@ -127,10 +121,12 @@ public class Player {
 				startSpace.put("lobbyrequest", id, command, lobbyName);
 				
 				Object[] t = startSpace.get(new ActualField("lobbyinfo"), new FormalField(String.class), new ActualField(id), new FormalField(String.class));
-				if (printError((String) t[1], (String) t[3])) {
-					continue;
+				if (!((String) t[1]).equals("error"))  {
+					break;
+				} else {
+					printError((String) t[3]);
 				}
-				break;
+				
 			}
 			/*
 			 * else if (command.equals("e")) {
@@ -170,11 +166,19 @@ public class Player {
 		}
 
 	}
-
+	
+	private void printError(String error) {
+		System.out.println("ERROR: Unknown command \"" + error + "\"\n");
+	}
+	
 	private List<Object[]> getHand() {
 		return handSpace.queryAll(new FormalField(Card.class));
 	}
-
+	
+	private void getToken(String action) throws InterruptedException {
+		lobbySpace.get(new ActualField("token"), new ActualField(action), new ActualField(id));
+	}
+	
 	private void displayHand(List<Object[]> allCards) {
 		System.out.println("You have the following cards: ");
 		int i = 1;
@@ -185,17 +189,27 @@ public class Player {
 		}
 		System.out.println();
 	}
+	
+	private void draw() throws InterruptedException {
+		Card topOfDiscarded = null;
+		// query top of discarded pile
+		lobbySpace.put("action", "getdiscarded", id);
+		Object[] q = lobbySpace.get(new ActualField("topdiscard"), new ActualField(id), new FormalField(Card.class));
+		topOfDiscarded = (Card) q[2];
 
-	private void getToken(String action) throws InterruptedException {
-		lobbySpace.get(new ActualField("token"), new ActualField(action), new ActualField(id));
+		String instruction = "Draw from (s)huffled pile or (d)iscarded pile: " + topOfDiscarded; // Show discarded pile
+																									// top
+		getTwoCommands("s", "d", instruction, "pickshuffled", "pickdiscarded");
+		handSpace.put(cardInUse);
 	}
 
+	
 	private void discard(List<Object[]> allCards) throws InterruptedException {
 		getToken("discardacard");
 		displayHand(getHand());
 		int cardNumber = Integer.parseInt(getInput("Which card would you like to discard (1),(2),(3),(4)?")) - 1;
 		while (cardNumber < 0 || cardNumber > 3) {
-			printUnknownCommand("" + cardNumber);
+			printError("" + cardNumber+1);
 			cardNumber = Integer.parseInt(getInput("Try again: Which card would you like to discard (1),(2),(3),(4)?"))
 					- 1;
 		}
@@ -207,9 +221,6 @@ public class Player {
 		cardInUse = null;
 	}
 
-	private void printUnknownCommand(String command) {
-		printError("error", "Unknown command \"" + command + "\"");
-	}
 
 	private void knockOption() throws InterruptedException {
 		getToken("chooseknock");
@@ -234,27 +245,13 @@ public class Player {
 
 	}
 
-	private void draw() throws InterruptedException {
-		Card topOfDiscarded = null;
-		// query top of discarded pile
-		lobbySpace.put("action", "getdiscarded", id);
-		Object[] q = lobbySpace.get(new ActualField("topdiscard"), new ActualField(id), new FormalField(Card.class));
-		topOfDiscarded = (Card) q[2];
-
-		String instruction = "Draw from (s)huffled pile or (d)iscarded pile: " + topOfDiscarded; // Show discarded pile
-																									// top
-		getTwoCommands("s", "d", instruction, "pickshuffled", "pickdiscarded");
-		handSpace.put(cardInUse);
-	}
-
 	private void getTwoCommands(String command1, String command2, String instruction, String action1, String action2)
 			throws InterruptedException {
 		String command = getInput(instruction).toLowerCase();
 		while (!(command.equals(command1) || command.equals(command2))) {
-			printUnknownCommand(command);
+			printError(command);
 			command = getInput("Try again: " + instruction).toLowerCase();
 		}
-		Card responded = null;
 		if (command.equals(command1))
 			doAnAction(action1);
 		if (command.equals(command2))
@@ -262,90 +259,42 @@ public class Player {
 
 	}
 
-	// Success: (response, id, action, "success", "You have picked a card!", card);
-	// Fail: (response, id, action, "error", "Illegal command", null)
-
-	private void doAnActionKnock(String action) throws InterruptedException { // knock knock
-		lobbySpace.put("action", action, id);
-		Object[] response = (lobbySpace.get(new ActualField("response"), new ActualField(id), new ActualField(action),
-				new FormalField(String.class), new FormalField(String.class)));
-		String succeded = (String) response[3];
-		String gameMessage = (String) response[4];
-		if (printError(succeded, gameMessage)) {
-			// TODO: Needs to do something Error occured
-
-		} else {
-			System.out.println(gameMessage);
-		}
-	}
-
-	private Card doAnAction1(String action) throws InterruptedException { // draw card
-		lobbySpace.put("action", action, id);
-		Object[] response = (lobbySpace.get(new ActualField("response"), new ActualField(id), new ActualField(action),
-				new FormalField(String.class), new FormalField(String.class), new FormalField(Card.class)));
-		String succeded = (String) response[3];
-		String gameMessage = (String) response[4];
-		if (printError(succeded, gameMessage)) {
-			// TODO: Needs to do something Error occured
-
-		} else {
-			System.out.println(gameMessage);
-		}
-		return (Card) response[5];
-	}
-
-	private void doAnAction2(String action, Card card) throws InterruptedException { // discard card
-		lobbySpace.put("action", action, id);
-		lobbySpace.get(new ActualField("response"), new ActualField(action), new ActualField(id),
-				new ActualField("ok"));
-		lobbySpace.put("action", action, id, card);
-
-		Object[] response = (lobbySpace.get(new ActualField("response"), new ActualField(id), new ActualField(action),
-				new FormalField(String.class), new FormalField(String.class)));
-
-		String succeded = (String) response[3];
-		String gameMessage = (String) response[4];
-		if (printError(succeded, gameMessage)) {
-			// TODO: Needs to do something Error occured
-
-		} else {
-			System.out.println(gameMessage);
-		}
-	}
-
 	private void doAnAction(String action) throws InterruptedException { // discard card
 		lobbySpace.put("action", action, id);
 		Object[] response = null;
 		if (action.equals("pickshuffled") || action.equals("pickdiscarded")) {
+			
 			response = (lobbySpace.get(new ActualField("response"), new ActualField(id), new ActualField(action),
 					new FormalField(String.class), new FormalField(String.class), new FormalField(Card.class)));
+			
 			cardInUse = (Card) response[5];
-
-		} else if (action.equals("discard")) {  
+		}
+		
+		if (action.equals("discard")) {  
+			
 			lobbySpace.get(new ActualField("response"), new ActualField(action), new ActualField(id),
 					new ActualField("ok"));
+			
 			lobbySpace.put("action", action, id, cardInUse);
+			
 			response = (lobbySpace.get(new ActualField("response"), new ActualField(id), new ActualField(action),
 					new FormalField(String.class), new FormalField(String.class)));
-
-		} else if (action.equals("knock") || action.equals("dontknock")) {
+		}
+		
+		if (action.equals("knock") || action.equals("dontknock")) {
+			
 			response = (lobbySpace.get(new ActualField("response"), new ActualField(id), new ActualField(action),
 					new FormalField(String.class), new FormalField(String.class)));
-
-		} else {
-
-			// Error stuff
-			return;
 		}
-		// TODO: Maybe just delete this part
-		String succeded = (String) response[3];
-		String gameMessage = (String) response[4];
-		if (printError(succeded, gameMessage)) {
-			// TODO: Needs to do something Error occured
-
+		
+		
+		if (((String) response[3]).equals("error")) {
+			printError((String) response[4]);
 		} else {
-			System.out.println(gameMessage);
+			System.out.println((String) response[4]);
 		}
+			
+	
 	}
 
 	class getMessagesFromLobby implements Runnable {
