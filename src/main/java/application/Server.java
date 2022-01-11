@@ -229,6 +229,7 @@ class startLobby implements Runnable {
 
 	public void run() {
 		try {
+			System.out.println("stuff");
 			lobby.get(new ActualField("lobbystatus"), new ActualField("public"));
 			List<Object[]> members = lobby.queryAll(new ActualField("lobbymember"), new FormalField(String.class));
 			if (members.size() < 2) {

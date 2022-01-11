@@ -10,12 +10,12 @@ public class Card {
 	}
 
 	public enum Suit {
-		CLUBS('♣'), DIAMONDS('♦'), HEARTS('♥'), SPADES('♠');
+		CLUBS(9827), DIAMONDS(9830), HEARTS(9829), SPADES(9824);
 
 		private char symbol;
 
-		private Suit(char symbol) {
-			this.symbol = symbol;
+		private Suit(int symbolNum) {
+			this.symbol = (char) symbolNum;
 		}
 
 		public char getSymbol() {
