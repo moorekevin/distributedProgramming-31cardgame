@@ -23,12 +23,15 @@ public class Player {
 	private RemoteSpace lobbySpace;
 	private SequentialSpace handSpace = new SequentialSpace();
 	private SequentialSpace messageTokens = new SequentialSpace();
+	
+	private boolean hasJoinedLobby;
+
 
 	public Player() {
 		final String uri = "tcp://localhost:" + START_GATE + "/" + START_NAME + "?keep";
 		try {
 			username = getInput("Enter your username");
-
+			hasJoinedLobby = false;
 			startSpace = new RemoteSpace(uri);
 
 			/*
@@ -49,10 +52,14 @@ public class Player {
 
 	public static void main(String[] args) {
 		Player player = new Player();
+		initiateStartSequence(player);
+	}
+	
+	private static void initiateStartSequence(Player player) {
 		try {
 			player.readStartOption();
 
-			player.joinLobby();
+			player.joinLobby(player);
 			if (player.isHost()) {
 				player.createGame();
 			}
@@ -111,15 +118,16 @@ public class Player {
 		return reader.nextLine();
 	}
 
-	private void joinLobby() throws InterruptedException, IOException {
+	private void joinLobby(Player player) throws InterruptedException, IOException {
 		try {
 			String lobbyURI = (String) (startSpace.get(new ActualField("lobbyinfo"), new ActualField("join"),
 					new ActualField(id), new FormalField(String.class)))[3];
 			lobbySpace = new RemoteSpace(lobbyURI);
 
 			lobbySpace.put("lobbymember", id);
-
+			hasJoinedLobby = true;
 			new Thread(new getMessagesFromLobby()).start();
+			new Thread(new checkIfHostExit(player)).start();
 
 			System.out.println("Joined lobby. Waiting for game to start\n");
 		} catch (UnknownHostException e) {
@@ -334,7 +342,7 @@ public class Player {
 
 	class getMessagesFromLobby implements Runnable {
 		public void run() {
-			while (true) {
+			while (hasJoinedLobby) {
 				try {
 					Object[] req = lobbySpace.get(new ActualField("info"), new ActualField(id),
 							new FormalField(String.class), new FormalField(String.class));
@@ -379,11 +387,29 @@ public class Player {
 		public void run() {
 			while (true) {
 				try {
-					startSpace.get(new ActualField("userpingrequest"), new ActualField(id));
-					startSpace.put("userpingresponse",id);
+					startSpace.get(new ActualField("userrequest"),new ActualField("ping"), new ActualField(id));
+					startSpace.put("userresponse","ping",id);
 				} catch (InterruptedException e) {
 					e.printStackTrace();
 				}
+			}
+		}
+	}
+	
+	class checkIfHostExit implements Runnable {
+		Player player;
+		public checkIfHostExit(Player player) {
+			this.player = player;
+		}
+		
+		public void run() {
+			try {
+				lobbySpace.query(new ActualField("exitlobby"));
+				System.out.println("Host has left, going back to lobby menu");
+				hasJoinedLobby = false;
+				initiateStartSequence(player);
+			} catch (InterruptedException e) {
+				
 			}
 		}
 	}
