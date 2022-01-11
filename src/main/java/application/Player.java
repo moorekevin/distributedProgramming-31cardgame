@@ -41,7 +41,7 @@ public class Player {
 			startSpace.put("user connected", username);
 			id = (String) (startSpace.get(new ActualField("uniqueid"), new ActualField(username),
 					new FormalField(String.class)))[2];
-			new Thread(new getMessagesFromServer()).start();
+			new Thread(new getPingsFromServer()).start();
 		} catch (InterruptedException | IOException e) {
 			e.printStackTrace();
 		}
@@ -338,27 +338,34 @@ public class Player {
 				try {
 					Object[] req = lobbySpace.get(new ActualField("info"), new ActualField(id),
 							new FormalField(String.class), new FormalField(String.class));
-					String turnid = (String) req[3];
+					String playerID = (String) req[3];
 					if (req[2].equals("whosturn")) {
-						if (turnid.equals(id)) {
+						if (playerID.equals(id)) {
 							System.out.println("It is now your turn");
 							messageTokens.put("printedturn");
 						} else {
-							lobbySpace.put("serverrequest", "username", id, turnid);
+							lobbySpace.put("serverrequest", "username", id, playerID);
 							String username = (String) (lobbySpace.get(new ActualField("serverresponse"),
 									new ActualField("username"), new ActualField(id),
 									new FormalField(String.class)))[3];
 							System.out.println("It is now player " + username + "'s turn");
 						}
 					} else if (req[2].equals("whosknocked")) {
-						if (!turnid.equals(id)) {
-							lobbySpace.put("serverrequest", "username", id, turnid);
+						if (!playerID.equals(id)) {
+							lobbySpace.put("serverrequest", "username", id, playerID);
 							String username = (String) (lobbySpace.get(new ActualField("serverresponse"),
 									new ActualField("username"), new ActualField(id),
 									new FormalField(String.class)))[3];
 							System.out
 									.println("Be aware! Player " + username + " has knocked. This is the last round!");
 						}
+					} else if (req[2].equals("inactiveplayer")) {
+						// PlayerID is not ID but a username here
+						System.out.println("Player " + playerID + " has left the game. Game restarting");
+					} else if (req[2].equals("won")) {
+						
+					} else if (req[2].equals("requestcards")) {
+						
 					}
 
 				} catch (InterruptedException e) {
@@ -368,14 +375,12 @@ public class Player {
 		}
 	}
 
-	class getMessagesFromServer implements Runnable {
-		// TODO: Might not be needed anymore?
+	class getPingsFromServer implements Runnable {
 		public void run() {
 			while (true) {
 				try {
-					String message = (String) (startSpace.get(new ActualField("message"), new ActualField(id),
-							new FormalField(String.class)))[2];
-					System.out.println(message);
+					startSpace.get(new ActualField("userpingrequest"), new ActualField(id));
+					startSpace.put("userpingresponse",id);
 				} catch (InterruptedException e) {
 					e.printStackTrace();
 				}
