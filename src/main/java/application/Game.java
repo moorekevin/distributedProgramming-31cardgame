@@ -120,6 +120,9 @@ public class Game implements Runnable {
 					
 					lobbySpace.put("token", "chooseknock", id); // hasDiscardedCards
 					break;
+				case "requestknock":
+					lobbySpace.put("response", id, knockedPlayer != null);
+					break;
 				case "dontknock":
 				case "knock":
 					if (action.equals("knock")) {
@@ -128,7 +131,7 @@ public class Game implements Runnable {
 						tellPlayers("whosknocked", id);
 						// TODO: send a message to all players that a player with username has knocked
 					} else {
-						lobbySpace.put("response", id, action, "success", "You have ended your turn without knocking!");
+						lobbySpace.put("response", id, action, "success", "You turn has ended!");
 					}
 
 					i++;
@@ -201,14 +204,6 @@ public class Game implements Runnable {
 			}
 		}
 		
-
-		for (int i = 1; i < playerHands.length; i++) {
-			int points = calcPoints(playerHands[i]);
-			if (points > winningPoints) {
-				winningPoints = points;
-				winningPlayer = memberList[i];
-			}
-		}
 		membersID.put(winningPlayer, membersID.get(winningPlayer) + 1);
 		Integer[] scoreList = new Integer[memberList.length];
 		
