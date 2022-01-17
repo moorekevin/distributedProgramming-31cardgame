@@ -90,12 +90,6 @@ public class Game implements Runnable {
 				case "discard":
 					lobbySpace.put("response", action, id, "ok");
 					t = lobbySpace.get(new ActualField("action"), new FormalField(String.class), new ActualField(id),
-<<<<<<< Updated upstream
-							new FormalField(Card.class));
-					Card c = (Card) t[3];
-					discardDeck.put(c);
-					lobbySpace.put("response", id, action, "success", "You have discarded a card!");
-=======
 							new FormalField(Card.class), new FormalField(Card[].class));
 					Card c = (Card) t[3];
 					discardDeck.put(c);
@@ -106,7 +100,6 @@ public class Game implements Runnable {
 						endGame();
 					}
 					
->>>>>>> Stashed changes
 					lobbySpace.put("token", "chooseknock", id); // hasDiscardedCards
 					break;
 				case "dontknock":
@@ -170,19 +163,17 @@ public class Game implements Runnable {
 
 		Card[][] playerHands = new Card[membersID.size()][3];
 		
-		Object[] memberList2 = membersID.keySet().toArray();
-		String[] memberList = new String[memberList2.length];
+		Object[] temp = membersID.keySet().toArray();
+		String[] memberList = new String[temp.length];
 
 		for (int i = 0; i < memberList2.length; i++) {
 			memberList[i] = (String) memberList2[i];
 		}
 				
+		String winningPlayer = null;
+		int winningPoints = c0;
+		
 		for (int i = 0; i < memberList.length; i++) {
-<<<<<<< Updated upstream
-			Card[] hand = (Card[]) lobbySpace.get(new ActualField("playerhand"),
-					new ActualField(memberList[i]), new FormalField(Card[].class))[2];
-			playerHands[i] = hand;
-=======
 			Card[] hand = (Card[]) lobbySpace.get(new ActualField("playerhand"), new ActualField(memberList[i]),
 					new FormalField(Card[].class))[2];
 			int points = calcPoints(hand);
@@ -190,11 +181,8 @@ public class Game implements Runnable {
 				winningPoints = points;
 				winningPlayer = memberList[i];
 			}
->>>>>>> Stashed changes
 		}
 		
-		String winningPlayer = memberList[0];
-		int winningPoints = calcPoints(playerHands[0]);
 
 		for (int i = 1; i < playerHands.length; i++) {
 			int points = calcPoints(playerHands[i]);
