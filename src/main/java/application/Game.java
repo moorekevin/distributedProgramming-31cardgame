@@ -39,7 +39,8 @@ public class Game implements Runnable {
 			for (Object[] member : tList) {
 				membersID.put((String) member[1], 0);
 			}
-
+			
+			String winningPlayer = null;
 			for (String member : membersID.keySet()) {
 				Card[] initialHand = new Card[3];
 				String id = member;
@@ -47,8 +48,18 @@ public class Game implements Runnable {
 					Card card = (Card) shuffleDeck.get(new FormalField(Card.class))[0];
 					initialHand[i] = card;
 				}
+				
+				if (calcPoints(initialHand) == 31) {
+					winningPlayer = member;
+				}
+				
 				lobbySpace.put("dealingcards", id, initialHand);
 			}
+			
+			if (winningPlayer != null) {
+				endGame();
+			}
+			
 
 			int i = 0;
 			// Player 0 starts
@@ -171,7 +182,7 @@ public class Game implements Runnable {
 		}
 				
 		String winningPlayer = null;
-		int winningPoints = c0;
+		int winningPoints = 0;
 		
 		for (int i = 0; i < memberList.length; i++) {
 			Card[] hand = (Card[]) lobbySpace.get(new ActualField("playerhand"), new ActualField(memberList[i]),

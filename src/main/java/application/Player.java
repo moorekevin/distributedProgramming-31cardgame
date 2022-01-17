@@ -164,14 +164,14 @@ public class Player {
 
 	private void startPlaying() throws InterruptedException {
 
-		System.out.println("Got nothing");
 		// Get dealt cards
 		Card[] initialHand = (Card[]) (lobbySpace.get(new ActualField("dealingcards"), new ActualField(id),
 				new FormalField(Card[].class)))[2];
+		
 		for (Card thisCard : initialHand) {
 			handSpace.put(thisCard);
 		}
-
+		
 		while (true) {
 			getToken("startofturn");
 			messageTokens.get(new ActualField("printedturn"));
