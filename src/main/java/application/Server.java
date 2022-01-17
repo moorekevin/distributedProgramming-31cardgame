@@ -76,11 +76,13 @@ class listenLobby implements Runnable {
 }
 
 class playerActivity implements Runnable {
+	SpaceRepository rep;
 	Space space;
 	Space lobby;
 	String playerID;
 	
-	public playerActivity(Space space, Space lobby, String playerID) {
+	public playerActivity(SpaceRepository rep, Space space, Space lobby, String playerID) {
+		this.rep = rep;
 		this.space = space;
 		this.lobby = lobby;
 		this.playerID = playerID;
@@ -100,6 +102,7 @@ class playerActivity implements Runnable {
 						lobby.put("exitlobby");
 						String lobbyName = (String) (lobby.query(new ActualField("lobbyname"), new FormalField(String.class)))[1];
 						space.get(new ActualField("lobbyname"), new ActualField(lobbyName), new FormalField(Integer.class));
+						rep.remove(lobbyName);
 					} else {
 						lobby.put("inactiveplayer", playerID, Server.users.get(playerID));
 						Server.users.remove(playerID);
@@ -248,7 +251,7 @@ class joinLobby implements Runnable {
 						startSpace.put("lobbyname", lobbyName, cap);
 						startSpace.put("lobbyinfo", "join", userID, lobbyURI);
 						// Start pinging user in lobby
-						new Thread(new playerActivity(startSpace, lobby, userID)).start();
+						new Thread(new playerActivity(rep, startSpace, lobby, userID)).start();
 					}
 				}
 			}

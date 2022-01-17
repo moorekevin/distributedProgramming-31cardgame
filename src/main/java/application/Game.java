@@ -166,8 +166,8 @@ public class Game implements Runnable {
 		Object[] temp = membersID.keySet().toArray();
 		String[] memberList = new String[temp.length];
 
-		for (int i = 0; i < memberList2.length; i++) {
-			memberList[i] = (String) memberList2[i];
+		for (int i = 0; i < temp.length; i++) {
+			memberList[i] = (String) temp[i];
 		}
 				
 		String winningPlayer = null;
