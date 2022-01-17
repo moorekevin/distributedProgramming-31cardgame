@@ -166,8 +166,14 @@ public class Player {
 		// Get dealt cards
 		Card[] initialHand = (Card[]) (lobbySpace.get(new ActualField("dealingcards"), new ActualField(id),
 				new FormalField(Card[].class)))[2];
+<<<<<<< Updated upstream
 		for (Card thisCard : initialHand) {
 			handSpace.put(thisCard);
+=======
+		
+		for (Object thisCard : initialHand) {
+			handSpace.put((Card) thisCard);
+>>>>>>> Stashed changes
 		}
 
 		while (true) {
@@ -196,8 +202,19 @@ public class Player {
 		System.out.println("ERROR: Unknown command \"" + error + "\"\n");
 	}
 
+<<<<<<< Updated upstream
 	private List<Object[]> getHand() {
 		return handSpace.queryAll(new FormalField(Card.class));
+=======
+	private ArrayList<Card> getHand() {
+		List<Object[]> allCards = handSpace.queryAll(new FormalField(Card.class));
+		ArrayList<Card> listToReturn = new ArrayList<Card>();
+		for (Object[] obj : allCards) {
+			Card card = ((Card) obj[0]);
+			listToReturn.add(card);
+		}
+		return listToReturn;
+>>>>>>> Stashed changes
 	}
 
 	private void getToken(String action) throws InterruptedException {
@@ -312,8 +329,20 @@ public class Player {
 		case "discard":
 			lobbySpace.get(new ActualField("response"), new ActualField(action), new ActualField(id),
 					new ActualField("ok"));
+<<<<<<< Updated upstream
 
 			lobbySpace.put("action", action, id, cardInUse);
+=======
+			
+			ArrayList<Card> handArrayList = getHand();
+			Card[] handArray = new Card[handArrayList.size()];
+			for (int i = 0; i < handArrayList.size(); i++) {
+				handArray[i] = handArrayList.get(i);
+			}
+			System.out.println(handArray[0]);
+			
+			lobbySpace.put("action", action, id, cardInUse, handArray);
+>>>>>>> Stashed changes
 
 			response = (lobbySpace.get(new ActualField("response"), new ActualField(id), new ActualField(action),
 					new FormalField(String.class), new FormalField(String.class)));

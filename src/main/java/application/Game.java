@@ -90,10 +90,23 @@ public class Game implements Runnable {
 				case "discard":
 					lobbySpace.put("response", action, id, "ok");
 					t = lobbySpace.get(new ActualField("action"), new FormalField(String.class), new ActualField(id),
+<<<<<<< Updated upstream
 							new FormalField(Card.class));
 					Card c = (Card) t[3];
 					discardDeck.put(c);
 					lobbySpace.put("response", id, action, "success", "You have discarded a card!");
+=======
+							new FormalField(Card.class), new FormalField(Card[].class));
+					Card c = (Card) t[3];
+					discardDeck.put(c);
+					lobbySpace.put("response", id, action, "success", "You have discarded a card!");
+					
+					Card[] hand = (Card[]) t[4];
+					if (calcPoints(hand) == 31) {
+						endGame();
+					}
+					
+>>>>>>> Stashed changes
 					lobbySpace.put("token", "chooseknock", id); // hasDiscardedCards
 					break;
 				case "dontknock":
@@ -165,9 +178,19 @@ public class Game implements Runnable {
 		}
 				
 		for (int i = 0; i < memberList.length; i++) {
+<<<<<<< Updated upstream
 			Card[] hand = (Card[]) lobbySpace.get(new ActualField("playerhand"),
 					new ActualField(memberList[i]), new FormalField(Card[].class))[2];
 			playerHands[i] = hand;
+=======
+			Card[] hand = (Card[]) lobbySpace.get(new ActualField("playerhand"), new ActualField(memberList[i]),
+					new FormalField(Card[].class))[2];
+			int points = calcPoints(hand);
+			if (winningPlayer == null || points > winningPoints) {
+				winningPoints = points;
+				winningPlayer = memberList[i];
+			}
+>>>>>>> Stashed changes
 		}
 		
 		String winningPlayer = memberList[0];
