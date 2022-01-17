@@ -190,7 +190,7 @@ public class Player {
 	}
 
 	private void printError(String error) {
-		System.out.println("ERROR: Unknown command \"" + error + "\"\n");
+		System.out.println("ERROR: \"" + error + "\"\n");
 	}
 
 	private ArrayList<Card> getHand() {
@@ -260,8 +260,6 @@ public class Player {
 	}
 
 	private void knockOption() throws InterruptedException {
-		// TODO: Should not be able to knock if someone else already has
-		
 		lobbySpace.put("action", "requestknock", id);
 		Boolean hasKnocked = (Boolean) lobbySpace.get(new ActualField("response"), new ActualField(id), new FormalField(Boolean.class))[2];
 		
