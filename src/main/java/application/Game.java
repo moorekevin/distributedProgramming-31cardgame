@@ -1,4 +1,4 @@
-// TODO: 
+// TODO: Når en person leaver så fjern ham fra hashmap med scores
 /*
  * TODO: Restart after winning game: Kevin, Aryan
  * -> Start game igen så folk kan nå at enter
@@ -65,108 +65,112 @@ public class Game implements Runnable {
 			
 			if (winningPlayer != null) {
 				endGame();
-			}
-			
+			} else {
+				int i = 0;
+				// Player 0 starts
+				lobbySpace.put("token", "startofturn", (String) membersID.keySet().toArray()[i]);
+				String knockedPlayer = null;
+				String lastPlayer = "";
 
-			int i = 0;
-			// Player 0 starts
-			lobbySpace.put("token", "startofturn", (String) membersID.keySet().toArray()[i]);
-			// lobbySpace.put(new ActualField("playerturn",id , username);
-			String knockedPlayer = null;
-			String lastPlayer = "";
-
-			while (true) {
-				// Success: (response, id, action, "success", "You have picked a card!", card);
-				// Fail: (response, id, action, "error", "Illegal command", null)
-
-				String id = (String) membersID.keySet().toArray()[i];
-
-				if (!lastPlayer.equals(id)) { // Tells all other players whose turn it is
-					tellPlayers("whosturn", id);
-					lastPlayer = id;
-				}
-
-				Object[] t = lobbySpace.get(new ActualField("action"), new FormalField(String.class),
-						new ActualField(id));
-
-				String action = (String) t[1];
-
-				switch (action) {
-				case "getdiscarded":
-					Card topDiscard = (Card) discardDeck.query(new FormalField(Card.class))[0];
-					lobbySpace.put("topdiscard", id, topDiscard);
-					break;
-				case "pickshuffled":
-				case "pickdiscarded":
-					// Picks from either shuffled or discarded deck
-					Card card = (Card) (action.equals("pickshuffled") ? shuffleDeck.get(new FormalField(Card.class))[0]
-							: discardDeck.get(new FormalField(Card.class))[0]);
-
-					lobbySpace.put("response", id, action, "success", "You have picked a card!", card);
-					lobbySpace.put("token", "discardacard", id); // hasDiscardedCards
-					break;
-				case "discard":
-					lobbySpace.put("response", action, id, "ok");
-					t = lobbySpace.get(new ActualField("action"), new FormalField(String.class), new ActualField(id),
-							new FormalField(Card.class), new FormalField(Card[].class));
-					Card c = (Card) t[3];
-					discardDeck.put(c);
-					lobbySpace.put("response", id, action, "success", "You have discarded a card!");
-					
-					Card[] hand = (Card[]) t[4];
-					if (calcPoints(hand) == 31) {
-						endGame();
-					}
-					
-					lobbySpace.put("token", "chooseknock", id); // hasDiscardedCards
-					break;
-				case "dontknock":
-				case "knock":
-					if (action.equals("knock")) {
-						knockedPlayer = id;
-						lobbySpace.put("response", id, action, "success", "You have knocked and ended your turn!");
-						tellPlayers("whosknocked", id);
-						// TODO: send a message to all players that a player with username has knocked
-					} else {
-						lobbySpace.put("response", id, action, "success", "You have ended your turn without knocking!");
-					}
-
-					i++;
-					// Start over from player 0
-					if (i >= membersID.size()) {
-						i -= membersID.size();
-					}
-
-					String nextId = (String) membersID.keySet().toArray()[i];
-					
-
-					if (nextId.equals(knockedPlayer)) {
-						endGame();
-					} else {
-						lobbySpace.put("token", "startofturn", nextId); // Next player's turn
-					}
-					break;
-				case "31":
-					lobbySpace.put("response", id, action, "success", "You have 31!");
-					
-					membersID.put(id, membersID.get(id) + 1);
-					String[] memberList = (String[]) membersID.keySet().toArray();
-					for (String member : membersID.keySet()) {
-						lobbySpace.put("scoreboard", member, memberList, membersID.get(member));
-					}
-					
-					tellPlayers("won", id);
-
-					break;
-				default:
-					lobbySpace.put("response", id, action, "error", "Illegal command", null);
-					break;
-				}
-
+				playingGame(i, knockedPlayer, lastPlayer);
 			}
 
 		} catch (InterruptedException e) {
 			e.printStackTrace();
+		}
+	}
+
+	private void playingGame(int i, String knockedPlayer, String lastPlayer) throws InterruptedException {
+		playingGameLoop: while (true) {
+			// Success: (response, id, action, "success", "You have picked a card!", card);
+			// Fail: (response, id, action, "error", "Illegal command", null)
+
+			String id = (String) membersID.keySet().toArray()[i];
+
+			if (!lastPlayer.equals(id)) { // Tells all other players whose turn it is
+				tellPlayers("whosturn", id);
+				lastPlayer = id;
+			}
+
+			Object[] t = lobbySpace.get(new ActualField("action"), new FormalField(String.class),
+					new ActualField(id));
+
+			String action = (String) t[1];
+
+			switch (action) {
+			case "getdiscarded":
+				Card topDiscard = (Card) discardDeck.query(new FormalField(Card.class))[0];
+				lobbySpace.put("topdiscard", id, topDiscard);
+				break;
+			case "pickshuffled":
+			case "pickdiscarded":
+				// Picks from either shuffled or discarded deck
+				Card card = (Card) (action.equals("pickshuffled") ? shuffleDeck.get(new FormalField(Card.class))[0]
+						: discardDeck.get(new FormalField(Card.class))[0]);
+
+				lobbySpace.put("response", id, action, "success", "You have picked a card!", card);
+				lobbySpace.put("token", "discardacard", id); // hasDiscardedCards
+				break;
+			case "discard":
+				lobbySpace.put("response", action, id, "ok");
+				t = lobbySpace.get(new ActualField("action"), new FormalField(String.class), new ActualField(id),
+						new FormalField(Card.class), new FormalField(Card[].class));
+				Card c = (Card) t[3];
+				discardDeck.put(c);
+				lobbySpace.put("response", id, action, "success", "You have discarded a card!");
+				
+				Card[] hand = (Card[]) t[4];
+				if (calcPoints(hand) == 31) {
+					endGame();
+					break playingGameLoop;
+				}
+				
+				lobbySpace.put("token", "chooseknock", id); // hasDiscardedCards
+				break;
+			case "dontknock":
+			case "knock":
+				if (action.equals("knock")) {
+					knockedPlayer = id;
+					lobbySpace.put("response", id, action, "success", "You have knocked and ended your turn!");
+					tellPlayers("whosknocked", id);
+					// TODO: send a message to all players that a player with username has knocked
+				} else {
+					lobbySpace.put("response", id, action, "success", "You have ended your turn without knocking!");
+				}
+
+				i++;
+				// Start over from player 0
+				if (i >= membersID.size()) {
+					i -= membersID.size();
+				}
+
+				String nextId = (String) membersID.keySet().toArray()[i];
+				
+
+				if (nextId.equals(knockedPlayer)) {
+					endGame();
+					break playingGameLoop;
+					
+				} else {
+					lobbySpace.put("token", "startofturn", nextId); // Next player's turn
+				}
+				break;
+			case "31":
+				lobbySpace.put("response", id, action, "success", "You have 31!");
+				
+				membersID.put(id, membersID.get(id) + 1);
+				String[] memberList = (String[]) membersID.keySet().toArray();
+				for (String member : membersID.keySet()) {
+					lobbySpace.put("scoreboard", member, memberList, membersID.get(member));
+				}
+				
+				tellPlayers("won", id);
+
+				break;
+			default:
+				lobbySpace.put("response", id, action, "error", "Illegal command", null);
+				break;
+			}
 		}
 	}
 
@@ -178,8 +182,6 @@ public class Game implements Runnable {
 
 	private void endGame() throws InterruptedException {
 		tellPlayers("requestcards", "");
-
-		Card[][] playerHands = new Card[membersID.size()][3];
 		
 		Object[] temp = membersID.keySet().toArray();
 		String[] memberList = new String[temp.length];
@@ -200,27 +202,20 @@ public class Game implements Runnable {
 				winningPlayer = memberList[i];
 			}
 		}
-		
-
-		for (int i = 1; i < playerHands.length; i++) {
-			int points = calcPoints(playerHands[i]);
-			if (points > winningPoints) {
-				winningPoints = points;
-				winningPlayer = memberList[i];
-			}
-		}
+	
 		membersID.put(winningPlayer, membersID.get(winningPlayer) + 1);
-		Integer[] scoreList = new Integer[memberList.length];
-		
+		Integer[] scoreList = new Integer[memberList.length];;
+
+		lobbySpace.getp(new ActualField("scoreboard"), new FormalField(String[].class), new FormalField(Integer[].class)); // Getting the scoreboard from previous games
+
 		for (int i = 0; i < scoreList.length; i++) {
 			scoreList[i] = membersID.get(memberList[i]);
 		}
-		for (String member : membersID.keySet()) {
-						lobbySpace.put("scoreboard", member, memberList, scoreList);
-		}
+		lobbySpace.put("scoreboard", memberList, scoreList);
 		tellPlayers("won", winningPlayer);
+		
 
-	}
+	}	
 
 	private int calcPoints(Card[] hand) {
 		int maxPoints = 0;

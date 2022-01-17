@@ -398,13 +398,12 @@ public class Player {
 							System.out.println("Player " + username + " won this round!");
 						}
 						      //  (scoreboard, id, memberList, score)
-						Object[] sb = lobbySpace.get(new ActualField("scoreboard"), new ActualField(id), new FormalField(String[].class),
+						Object[] sb = lobbySpace.query(new ActualField("scoreboard"), new FormalField(String[].class),
 								new FormalField(Integer[].class));
-						      System.out.println(2);
 						
 						System.out.println("Scoreboard:");
-						String[] members = (String[]) sb[2];
-						Integer [] scores = (Integer[]) sb[3];
+						String[] members = (String[]) sb[1];
+						Integer [] scores = (Integer[]) sb[2];
 						for (int i = 0; i < members.length; i++){
 							String id2 = (String) members[i];
 							lobbySpace.put("serverrequest", "username", id, id2);
