@@ -2,6 +2,9 @@
 /*
  * TODO: Restart after winning game: Kevin, Aryan
  * -> Start game igen så folk kan nå at enter
+ * TODO: Cool tabel til scoreboard
+ * -> Align scores
+ * TODO: Tell lobby someone has joined
  * TODO: GUI filer
  */
 
@@ -13,8 +16,8 @@ import java.util.List;
 import org.jspace.*;
 
 public class Game implements Runnable {
-	private RandomSpace shuffleDeck = new RandomSpace();
-	private StackSpace discardDeck = new StackSpace();
+	private RandomSpace shuffleDeck;
+	private StackSpace discardDeck;
 	private Space lobbySpace;
 	private HashMap<String, Integer> membersID;
 
@@ -23,7 +26,13 @@ public class Game implements Runnable {
 		this.membersID = new HashMap<String, Integer>();
 
 		new Thread(new checkInactivePlayers()).start();
-
+	}
+	
+	private void setGameUp() throws InterruptedException{
+		
+		shuffleDeck = new RandomSpace();
+		discardDeck = new StackSpace();
+		
 		// Add 52 cards to shuffleDeck
 		for (Card.Num num : Card.Num.values()) {
 			for (Card.Suit suit : Card.Suit.values()) {
@@ -34,44 +43,47 @@ public class Game implements Runnable {
 		// Add one card to discard pile
 		Card card = (Card) shuffleDeck.get(new FormalField(Card.class))[0];
 		discardDeck.put(card);
+		
+		// Deal 3 cards to all joined members
+		List<Object[]> tList = lobbySpace.queryAll(new ActualField("lobbymember"), new FormalField(String.class));
+	
+		for (Object[] member : tList) {
+			if (!membersID.containsKey((String) member[1])) {
+				membersID.put((String) member[1], 0);
+			}
+		}
+	
+		String winningPlayer = null;
+		for (String member : membersID.keySet()) {
+			Card[] initialHand = new Card[3];
+			String id = member;
+			for (int i = 0; i < 3; i++) {
+				Card c = (Card) shuffleDeck.get(new FormalField(Card.class))[0];
+				initialHand[i] = c;
+			}
+	
+			if (calcPoints(initialHand) == 31) {
+				winningPlayer = member;
+			}
+	
+			lobbySpace.put("dealingcards", id, initialHand);
+		}
+	
+		if (winningPlayer != null) {
+			endRound();
+		} else {
+			playingGame();
+		}
 	}
 
 	public void run() {
 		try {
-			// Deal 3 cards to all joined members
-			List<Object[]> tList = lobbySpace.queryAll(new ActualField("lobbymember"), new FormalField(String.class));
-
-			for (Object[] member : tList) {
-				membersID.put((String) member[1], 0);
-			}
-
-			String winningPlayer = null;
-			for (String member : membersID.keySet()) {
-				Card[] initialHand = new Card[3];
-				String id = member;
-				for (int i = 0; i < 3; i++) {
-					Card card = (Card) shuffleDeck.get(new FormalField(Card.class))[0];
-					initialHand[i] = card;
-				}
-
-				if (calcPoints(initialHand) == 31) {
-					winningPlayer = member;
-				}
-
-				lobbySpace.put("dealingcards", id, initialHand);
-			}
-
-			if (winningPlayer != null) {
-				endGame();
-			} else {
-				playingGame();
-			}
-
+			setGameUp();
 		} catch (InterruptedException e) {
 			e.printStackTrace();
 		}
 	}
-
+	
 	private void playingGame() throws InterruptedException {
 		int i = 0;
 		
@@ -84,18 +96,15 @@ public class Game implements Runnable {
 		playingGameLoop: while (true) {
 			// Success: (response, id, action, "success", "You have picked a card!", card);
 			// Fail: (response, id, action, "error", "Illegal command", null)
-
 			String id = (String) membersID.keySet().toArray()[i];
-
 			if (!lastPlayer.equals(id)) { // Tells all other players whose turn it is
 				tellPlayers("whosturn", id);
 				lastPlayer = id;
 			}
 
 			Object[] t = lobbySpace.get(new ActualField("action"), new FormalField(String.class), new ActualField(id));
-
+			
 			String action = (String) t[1];
-
 			switch (action) {
 			case "getdiscarded":
 				Card topDiscard = (Card) discardDeck.query(new FormalField(Card.class))[0];
@@ -120,7 +129,7 @@ public class Game implements Runnable {
 
 				Card[] hand = (Card[]) t[4];
 				if (calcPoints(hand) == 31) {
-					endGame();
+					endRound();
 					break playingGameLoop;
 				}
 
@@ -149,7 +158,7 @@ public class Game implements Runnable {
 				String nextId = (String) membersID.keySet().toArray()[i];
 
 				if (nextId.equals(knockedPlayer)) {
-					endGame();
+					endRound();
 					break playingGameLoop;
 
 				} else {
@@ -159,15 +168,8 @@ public class Game implements Runnable {
 			case "31":
 				lobbySpace.put("response", id, action, "success", "You have 31!");
 
-				membersID.put(id, membersID.get(id) + 1);
-				String[] memberList = (String[]) membersID.keySet().toArray();
-				for (String member : membersID.keySet()) {
-					lobbySpace.put("scoreboard", member, memberList, membersID.get(member));
-				}
-
-				tellPlayers("won", id);
-
-				break;
+				endGame(id);
+				break;				
 			default:
 				lobbySpace.put("response", id, action, "error", "Illegal command", null);
 				break;
@@ -181,10 +183,11 @@ public class Game implements Runnable {
 		}
 	}
 
-	private void endGame() throws InterruptedException {
+	private void endRound() throws InterruptedException {
 		tellPlayers("requestcards", "");
 
 		Object[] temp = membersID.keySet().toArray();
+		
 		String[] memberList = new String[temp.length];
 
 		for (int i = 0; i < temp.length; i++) {
@@ -203,22 +206,30 @@ public class Game implements Runnable {
 				winningPlayer = memberList[i];
 			}
 		}
-
-		membersID.put(winningPlayer, membersID.get(winningPlayer) + 1);
-		Integer[] scoreList = new Integer[memberList.length];
-		;
-
-		lobbySpace.getp(new ActualField("scoreboard"), new FormalField(String[].class),
-				new FormalField(Integer[].class)); // Getting the scoreboard from previous games
-
-		for (int i = 0; i < scoreList.length; i++) {
-			scoreList[i] = membersID.get(memberList[i]);
-		}
-		lobbySpace.put("scoreboard", memberList, scoreList);
-		tellPlayers("won", winningPlayer);
-
+		endGame(winningPlayer);
 	}
 
+	private void endGame(String winningPlayer) throws InterruptedException {
+		
+		Object[] lastSBReq = lobbySpace.getp(new ActualField("scoreboard"), new FormalField(HashMap.class)); // Getting the scoreboard from previous games
+		if (lastSBReq != null) {
+			@SuppressWarnings("unchecked")
+			HashMap<String, Integer> lastScoreboard = (HashMap<String,Integer>) lastSBReq[1];
+			for (String member : membersID.keySet()) {
+				membersID.put(member, (int) lastScoreboard.get(member));
+			}
+		}
+		membersID.put(winningPlayer, (Integer) (membersID.get(winningPlayer) + 1));
+		
+		lobbySpace.put("scoreboard", membersID);
+		tellPlayers("won", winningPlayer);
+
+		for (String member : membersID.keySet()) { // Makes sure that all players has printed scoreboard
+			lobbySpace.get(new ActualField("printedscores"), new ActualField(member));	
+		}
+		setGameUp();
+	}
+	
 	private int calcPoints(Card[] hand) {
 		int maxPoints = 0;
 
@@ -244,7 +255,7 @@ public class Game implements Runnable {
 				String username = (String) inactivePlayer[2];
 				membersID.remove(id);
 				tellPlayers("inactiveplayer", username);
-				endGame();
+				endRound();
 
 				// TODO: Check that they have received and printed message
 

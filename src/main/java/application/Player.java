@@ -5,6 +5,7 @@ package application;
 import java.io.IOException;
 import java.net.UnknownHostException;
 import java.util.ArrayList;
+import java.util.HashMap;
 import java.util.List;
 import java.util.Scanner;
 
@@ -62,9 +63,14 @@ public class Player {
 
 			player.joinLobby(player);
 			if (player.isHost()) {
+				
 				player.createGame();
+				
 			}
+			
 			player.startPlaying();
+			
+			
 		} catch (InterruptedException | IOException e) {
 			e.printStackTrace();
 		}
@@ -162,8 +168,7 @@ public class Player {
 		new Thread(new Game(lobbySpace)).start();
 	}
 
-	private void startPlaying() throws InterruptedException {
-
+	private void startPlaying() throws InterruptedException {		
 		// Get dealt cards
 		Card[] initialHand = (Card[]) (lobbySpace.get(new ActualField("dealingcards"), new ActualField(id),
 				new FormalField(Card[].class)))[2];
@@ -367,7 +372,6 @@ public class Player {
 					case "whosturn":
 						if (playerID.equals(id)) {
 							System.out.println("It is now your turn");
-							messageTokens.put("printedturn");
 						} else {
 							lobbySpace.put("serverrequest", "username", id, playerID);
 							String username = (String) (lobbySpace.get(new ActualField("serverresponse"),
@@ -375,6 +379,7 @@ public class Player {
 									new FormalField(String.class)))[3];
 							System.out.println("It is now player " + username + "'s turn");
 						}
+						messageTokens.put("printedturn");
 						break;
 
 					case "whosknocked":
@@ -405,20 +410,20 @@ public class Player {
 							System.out.println("Player " + username + " won this round!");
 						}
 						      //  (scoreboard, id, memberList, score)
-						Object[] sb = lobbySpace.query(new ActualField("scoreboard"), new FormalField(String[].class),
-								new FormalField(Integer[].class));
-						
+						Object[] sbReq = lobbySpace.query(new ActualField("scoreboard"), new FormalField(HashMap.class));
+						@SuppressWarnings("unchecked")
+						HashMap<String,Integer> scoreboard = (HashMap<String,Integer>) sbReq[1];
 						System.out.println("Scoreboard:");
-						String[] members = (String[]) sb[1];
-						Integer [] scores = (Integer[]) sb[2];
-						for (int i = 0; i < members.length; i++){
-							String id2 = (String) members[i];
-							lobbySpace.put("serverrequest", "username", id, id2);
+						for (String member : scoreboard.keySet()){
+							lobbySpace.put("serverrequest", "username", id, member);
 							
 							String username = (String) (lobbySpace.get(new ActualField("serverresponse"), new ActualField("username"), new ActualField(id),
 									new FormalField(String.class)))[3];
-							System.out.println(" " + username + ": " + scores[i]);
+							System.out.println(scoreboard.get(member).getClass());
+							System.out.println(" " + username + ": " + (scoreboard.get(member)));
+							//System.out.format("  %-16s %02d%n", '"' + username + "\":", scoreboard.get(member));
 						}
+						lobbySpace.put("printedscores", id);
 						break;
 					case "requestcards":
 						List<Object[]> cardList = handSpace.queryAll(new FormalField(Card.class));
