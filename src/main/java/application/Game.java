@@ -127,6 +127,9 @@ public class Game implements Runnable {
 				
 				lobbySpace.put("token", "chooseknock", id); // hasDiscardedCards
 				break;
+			case "requestknock":
+				lobbySpace.put("response", id, knockedPlayer != null);
+				break;
 			case "dontknock":
 			case "knock":
 				if (action.equals("knock")) {
@@ -135,7 +138,7 @@ public class Game implements Runnable {
 					tellPlayers("whosknocked", id);
 					// TODO: send a message to all players that a player with username has knocked
 				} else {
-					lobbySpace.put("response", id, action, "success", "You have ended your turn without knocking!");
+					lobbySpace.put("response", id, action, "success", "Your turn has ended!");
 				}
 
 				i++;

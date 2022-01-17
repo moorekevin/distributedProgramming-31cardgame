@@ -261,10 +261,19 @@ public class Player {
 
 	private void knockOption() throws InterruptedException {
 		// TODO: Should not be able to knock if someone else already has
-		getToken("chooseknock");
-		String instruction = "Do you wish to (k)nock or (d)on't knock?";
-		getTwoCommands("k", "d", instruction, "knock", "dontknock");
-
+		
+		lobbySpace.put("action", "requestknock", id);
+		Boolean hasKnocked = (Boolean) lobbySpace.get(new ActualField("response"), new ActualField(id), new FormalField(Boolean.class))[2];
+		
+		   //respons
+		if (!hasKnocked) {
+			getToken("chooseknock");
+			String instruction = "Do you wish to (k)nock or (d)on't knock?";
+			getTwoCommands("k", "d", instruction, "knock", "dontknock");
+		} else {
+			doAnAction("dontknock");
+		}
+		
 	}
 
 	/*private boolean has31(List<Object[]> allCards) {
@@ -302,6 +311,7 @@ public class Player {
 		Object[] response = null;
 		
 		switch (action) {
+			
 		case "pickshuffled":
 		case "pickdiscarded":
 
@@ -319,7 +329,6 @@ public class Player {
 			for (int i = 0; i < handArrayList.size(); i++) {
 				handArray[i] = handArrayList.get(i);
 			}
-			System.out.println(handArray[0]);
 			
 			lobbySpace.put("action", action, id, cardInUse, handArray);
 
