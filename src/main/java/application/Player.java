@@ -176,9 +176,6 @@ public class Player {
 			getToken("startofturn");
 			messageTokens.get(new ActualField("printedturn"));
 			displayHand(getHand()); // 3
-			/*if (has31(getHand())) {
-				doAnAction("31");
-			}*/
 			
 
 			draw(); // +1
@@ -186,10 +183,6 @@ public class Player {
 			
 			
 			displayHand(getHand());
-
-			/*if (has31(getHand())) {
-				doAnAction("31");
-			}*/
 
 			knockOption();
 		}

@@ -1,3 +1,12 @@
+// TODO: 
+/*
+ * TODO: Restart after winning game: Kevin, Aryan
+ * -> Start game igen så folk kan nå at enter
+ * TODO: Knock functionality Bjørn, Jackob Jackobsen
+ * -> Man kan blive ved med at knocke
+ * TODO: GUI filer
+ */
+
 package application;
 
 import java.util.HashMap;
@@ -10,8 +19,6 @@ public class Game implements Runnable {
 	private StackSpace discardDeck = new StackSpace();
 	private Space lobbySpace;
 	private HashMap<String, Integer> membersID;
-	// TODO: Add a scoreboard hashmap/space
-	// TODO: move has31 to game
 
 	public Game(Space lobbySpace) throws InterruptedException {
 		this.lobbySpace = lobbySpace;
