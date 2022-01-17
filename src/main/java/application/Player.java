@@ -4,6 +4,7 @@ package application;
 
 import java.io.IOException;
 import java.net.UnknownHostException;
+import java.util.ArrayList;
 import java.util.List;
 import java.util.Scanner;
 
@@ -163,29 +164,36 @@ public class Player {
 
 	private void startPlaying() throws InterruptedException {
 
+		System.out.println("Got nothing");
 		// Get dealt cards
-		Card[] initialHand = (Card[]) (lobbySpace.get(new ActualField("dealingcards"), new ActualField(id),
-				new FormalField(Card[].class)))[2];
-		for (Card thisCard : initialHand) {
-			handSpace.put(thisCard);
+		@SuppressWarnings("unchecked")
+		ArrayList<Card> initialHand = (ArrayList<Card>) (lobbySpace.get(new ActualField("dealingcards"), new ActualField(id),
+				new FormalField(ArrayList.class)))[2];
+		
+		System.out.print(initialHand.get(0));
+		
+		for (Object thisCard : initialHand.toArray()) {
+			handSpace.put((Card) thisCard);
 		}
 
 		while (true) {
 			getToken("startofturn");
 			messageTokens.get(new ActualField("printedturn"));
-
 			displayHand(getHand()); // 3
-			if (has31(getHand())) {
+			/*if (has31(getHand())) {
 				doAnAction("31");
-			}
+			}*/
+			
 
 			draw(); // +1
 			discard(getHand()); // 4
+			
+			
 			displayHand(getHand());
 
-			if (has31(getHand())) {
+			/*if (has31(getHand())) {
 				doAnAction("31");
-			}
+			}*/
 
 			knockOption();
 		}
@@ -196,19 +204,24 @@ public class Player {
 		System.out.println("ERROR: Unknown command \"" + error + "\"\n");
 	}
 
-	private List<Object[]> getHand() {
-		return handSpace.queryAll(new FormalField(Card.class));
+	private List<Card> getHand() {
+		List<Object[]> allCards = handSpace.queryAll(new FormalField(Card.class));
+		List<Card> listToReturn = new ArrayList<Card>();
+		for (Object[] obj : allCards) {
+			Card card = ((Card) obj[0]);
+			listToReturn.add(card);
+		}
+		return listToReturn;
 	}
 
 	private void getToken(String action) throws InterruptedException {
 		lobbySpace.get(new ActualField("token"), new ActualField(action), new ActualField(id));
 	}
 
-	private void displayHand(List<Object[]> allCards) {
+	private void displayHand(List<Card> allCards) {
 		System.out.println("You have the following cards: ");
 		int i = 1;
-		for (Object[] obj : allCards) {
-			Card card = ((Card) obj[0]);
+		for (Card card : allCards) {
 			System.out.print("(" + i + "): " + card.toString() + "    ");
 			i++;
 		}
@@ -228,7 +241,7 @@ public class Player {
 		handSpace.put(cardInUse);
 	}
 
-	private void discard(List<Object[]> allCards) throws InterruptedException {
+	private void discard(List<Card> allCards) throws InterruptedException {
 		getToken("discardacard");
 		displayHand(getHand());
 		String command = getInput("Which card would you like to discard (1),(2),(3),(4)?");
@@ -250,9 +263,9 @@ public class Player {
 					- 1;
 		}
 
-		Card discardThis = (Card) allCards.get(cardNumber)[0];
+		Card discardThis = allCards.get(cardNumber);
 		handSpace.get(new ActualField(discardThis));
-		cardInUse = (Card) allCards.get(cardNumber)[0];
+		cardInUse = allCards.get(cardNumber);
 		doAnAction("discard");
 		cardInUse = null;
 	}
@@ -265,7 +278,7 @@ public class Player {
 
 	}
 
-	private boolean has31(List<Object[]> allCards) {
+	/*private boolean has31(List<Object[]> allCards) {
 		String suit = "" + ((Card) allCards.get(0)[0]).getSuit();
 		boolean sameSuit = false;
 		int points = 0;
@@ -279,7 +292,7 @@ public class Player {
 
 		return sameSuit && points == 31;
 
-	}
+	}*/
 
 	private void getTwoCommands(String command1, String command2, String instruction, String action1, String action2)
 			throws InterruptedException {
@@ -312,8 +325,7 @@ public class Player {
 		case "discard":
 			lobbySpace.get(new ActualField("response"), new ActualField(action), new ActualField(id),
 					new ActualField("ok"));
-
-			lobbySpace.put("action", action, id, cardInUse);
+			lobbySpace.put("action", action, id, cardInUse, getHand());
 
 			response = (lobbySpace.get(new ActualField("response"), new ActualField(id), new ActualField(action),
 					new FormalField(String.class), new FormalField(String.class)));

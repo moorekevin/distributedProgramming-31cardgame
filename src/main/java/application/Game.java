@@ -1,5 +1,6 @@
 package application;
 
+import java.util.ArrayList;
 import java.util.HashMap;
 import java.util.List;
 
@@ -40,14 +41,24 @@ public class Game implements Runnable {
 				membersID.put((String) member[1], 0);
 			}
 
+			String winningPlayer = null;
+			
 			for (String member : membersID.keySet()) {
-				Card[] initialHand = new Card[3];
+				ArrayList<Card> initialHand = new ArrayList<Card>();
 				String id = member;
 				for (int i = 0; i < 3; i++) {
 					Card card = (Card) shuffleDeck.get(new FormalField(Card.class))[0];
-					initialHand[i] = card;
+					initialHand.add(card);
 				}
 				lobbySpace.put("dealingcards", id, initialHand);
+
+				if (calcPoints(initialHand) == 31) {
+					winningPlayer = member;
+				}
+				
+			}
+			if (winningPlayer != null) {
+				endGame();
 			}
 
 			int i = 0;
@@ -88,12 +99,20 @@ public class Game implements Runnable {
 					lobbySpace.put("token", "discardacard", id); // hasDiscardedCards
 					break;
 				case "discard":
+					System.out.println(1);
 					lobbySpace.put("response", action, id, "ok");
 					t = lobbySpace.get(new ActualField("action"), new FormalField(String.class), new ActualField(id),
-							new FormalField(Card.class));
+							new FormalField(Card.class), new FormalField(List.class));
+					System.out.println(2);
 					Card c = (Card) t[3];
 					discardDeck.put(c);
 					lobbySpace.put("response", id, action, "success", "You have discarded a card!");
+					
+					List<Card> hand = (List<Card>) t[4];
+					if (calcPoints(hand) == 31) {
+						endGame();
+					}
+					
 					lobbySpace.put("token", "chooseknock", id); // hasDiscardedCards
 					break;
 				case "dontknock":
@@ -102,7 +121,6 @@ public class Game implements Runnable {
 						knockedPlayer = id;
 						lobbySpace.put("response", id, action, "success", "You have knocked and ended your turn!");
 						tellPlayers("whosknocked", id);
-						// TODO: send a message to all players that a player with username has knocked
 					} else {
 						lobbySpace.put("response", id, action, "success", "You have ended your turn without knocking!");
 					}
@@ -155,45 +173,49 @@ public class Game implements Runnable {
 	private void endGame() throws InterruptedException {
 		tellPlayers("requestcards", "");
 
-		Card[][] playerHands = new Card[membersID.size()][3];
-		
-		Object[] memberList2 = membersID.keySet().toArray();
-		String[] memberList = new String[memberList2.length];
+		// ArrayList<List<Card>> playerHands = new ArrayList<List<Card>>();
 
-		for (int i = 0; i < memberList2.length; i++) {
-			memberList[i] = (String) memberList2[i];
+		Object[] temp = membersID.keySet().toArray();
+		String[] memberList = new String[temp.length];
+
+		for (int i = 0; i < temp.length; i++) {
+			memberList[i] = (String) temp[i];
 		}
-				
+
+		String winningPlayer = null;
+		int winningPoints = 0;
 		for (int i = 0; i < memberList.length; i++) {
-			Card[] hand = (Card[]) lobbySpace.get(new ActualField("playerhand"),
-					new ActualField(memberList[i]), new FormalField(Card[].class))[2];
-			playerHands[i] = hand;
-		}
-		
-		String winningPlayer = memberList[0];
-		int winningPoints = calcPoints(playerHands[0]);
-
-		for (int i = 1; i < playerHands.length; i++) {
-			int points = calcPoints(playerHands[i]);
-			if (points > winningPoints) {
+			@SuppressWarnings("unchecked")
+			List<Card> hand = (List<Card>) lobbySpace.get(new ActualField("playerhand"), new ActualField(memberList[i]),
+					new FormalField(List.class))[2];
+			int points = calcPoints(hand);
+			if (winningPlayer == null || points > winningPoints) {
 				winningPoints = points;
 				winningPlayer = memberList[i];
 			}
 		}
+
+		/*for (int i = 1; i < playerHands.size(); i++) {
+			int points = calcPoints(playerHands.get(i));
+			if (points > winningPoints) {
+				winningPoints = points;
+				winningPlayer = memberList[i];
+			}
+		}*/
 		membersID.put(winningPlayer, membersID.get(winningPlayer) + 1);
 		Integer[] scoreList = new Integer[memberList.length];
-		
+
 		for (int i = 0; i < scoreList.length; i++) {
 			scoreList[i] = membersID.get(memberList[i]);
 		}
 		for (String member : membersID.keySet()) {
-						lobbySpace.put("scoreboard", member, memberList, scoreList);
+			lobbySpace.put("scoreboard", member, memberList, scoreList);
 		}
 		tellPlayers("won", winningPlayer);
 
 	}
 
-	private int calcPoints(Card[] hand) {
+	private int calcPoints(List<Card> hand) {
 		int maxPoints = 0;
 
 		for (Card.Suit suit : Card.Suit.values()) {
