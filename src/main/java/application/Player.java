@@ -24,6 +24,7 @@ public class Player {
 	private RemoteSpace lobbySpace;
 	private SequentialSpace handSpace = new SequentialSpace();
 	private SequentialSpace messageTokens = new SequentialSpace();
+	private Thread play;
 	
 	private boolean hasJoinedLobby;
 
@@ -56,9 +57,7 @@ public class Player {
 			joinLobby();
 			if (isHost()) {
 				createGame();
-			} else {
-//				new Thread(new checkExit()).start();
-			}
+			} 
 			
 			startPlaying();
 			
@@ -164,12 +163,11 @@ public class Player {
 	private void startPlaying() throws InterruptedException {
 		getDealtCards();
 		
-		while (true) {
+		/*while (true) {
 			getToken("startofturn");
 			messageTokens.get(new ActualField("printedturn"));
 			displayHand(getHand()); // 3
 			
-
 			draw(); // +1
 			discard(getHand()); // 4
 			
@@ -177,8 +175,30 @@ public class Player {
 			displayHand(getHand());
 
 			knockOption();
+		}*/
+		play = new Thread(new Play());
+		play.start();
+	}
+	class Play implements Runnable {
+		public void run() {
+			try {
+				while (true) {
+					getToken("startofturn");
+					messageTokens.get(new ActualField("printedturn"));
+					displayHand(getHand()); // 3
+					
+					draw(); // +1
+					discard(getHand()); // 4
+					
+					
+					displayHand(getHand());
+	
+					knockOption();
+				}
+			} catch (InterruptedException e) {
+					// Do nothing
+			}
 		}
-
 	}
 
 	private void getDealtCards() throws InterruptedException {
@@ -405,7 +425,7 @@ public class Player {
 					System.out.println("Created new game");
 				}
 				lobbySpace.get(new ActualField("restartgame"), new ActualField(id));
-				player.getDealtCards();
+				player.startPlaying();
 			} catch (InterruptedException e) {
 				e.printStackTrace();
 			}
@@ -448,7 +468,6 @@ public class Player {
 						// PlayerID is not ID but a username here
 						System.out.println("Player " + playerID + " has left the game. Game restarting");
 						break;
-
 					case "won":
 					
 						if (playerID.equals(id)) {
@@ -460,23 +479,12 @@ public class Player {
 									new FormalField(String.class)))[3];
 							System.out.println("Player " + username + " won this round!");
 						}
-						      //  (scoreboard, id, memberList, score)
-						Object[] sbReq = lobbySpace.query(new ActualField("scoreboard"), new FormalField(Scoreboard.class));
-						Scoreboard scoreboard = (Scoreboard) sbReq[1];
-						System.out.println("\nScoreboard");
-						for (String member : scoreboard.keySet()){
-							lobbySpace.put("serverrequest", "username", id, member);
-							
-							String username = (String) (lobbySpace.get(new ActualField("serverresponse"), new ActualField("username"), new ActualField(id),
-									new FormalField(String.class)))[3];
-							//System.out.println(" " + username + ": " + (scoreboard.get(member)));
-							System.out.format("  %-16s %02d%n", '"' + username + "\":", scoreboard.get(member));
-						}
-						if (isHost()) {
-							lobbySpace.put("restartgame");
-						}
-						lobbySpace.put("printedscores", id);
-						System.out.println("Put printedscores for id " + id);
+						showSBandRestart();
+						break;
+					case "quit":
+						showSBandRestart();
+						// TODO: Here aryan
+						play.interrupt();
 						break;
 					case "requestcards":
 						List<Object[]> cardList = handSpace.queryAll(new FormalField(Card.class));
@@ -497,6 +505,25 @@ public class Player {
 					e.printStackTrace();
 				}
 			}
+		}
+
+		private void showSBandRestart() throws InterruptedException {
+			//  (scoreboard, id, memberList, score)
+			Object[] sbReq = lobbySpace.query(new ActualField("scoreboard"), new FormalField(Scoreboard.class));
+			Scoreboard scoreboard = (Scoreboard) sbReq[1];
+			System.out.println("\nScoreboard");
+			for (String member : scoreboard.keySet()){
+						lobbySpace.put("serverrequest", "username", id, member);
+						
+						String username = (String) (lobbySpace.get(new ActualField("serverresponse"), new ActualField("username"), new ActualField(id),
+								new FormalField(String.class)))[3];
+						//System.out.println(" " + username + ": " + (scoreboard.get(member)));
+						System.out.format("  %-16s %02d%n", '"' + username + "\":", scoreboard.get(member));
+			}
+			if (isHost()) {
+						lobbySpace.put("restartgame");
+			}
+			lobbySpace.put("printedscores", id);
 		}
 	}
 

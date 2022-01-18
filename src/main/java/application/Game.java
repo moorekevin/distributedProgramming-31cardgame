@@ -27,7 +27,6 @@ public class Game implements Runnable {
 	}
 	
 	private void setGameUp() throws InterruptedException{
-		System.out.println("Setting game up");
 		shuffleDeck = new RandomSpace();
 		discardDeck = new StackSpace();
 		
@@ -207,9 +206,7 @@ public class Game implements Runnable {
 		
 		if (roundFinished) {
 			endGame(winningPlayer);
-		} else {
-			endGame(null);
-		}
+		} 
 	}
 
 	private void endGame(String winningPlayer) throws InterruptedException {
@@ -227,7 +224,9 @@ public class Game implements Runnable {
 		if (winningPlayer != null) {
 			membersScore.put(winningPlayer, (Integer) (membersScore.get(winningPlayer) + 1));
 			tellPlayers("won", winningPlayer);
-		} 
+		}  else {
+			tellPlayers("quit","");
+		}
 		
 		lobbySpace.put("scoreboard", membersScore);
 	}
@@ -257,7 +256,7 @@ public class Game implements Runnable {
 				String username = (String) inactivePlayer[2];
 				membersScore.remove(id);
 				tellPlayers("inactiveplayer", username);
-				endRound(false);
+				endGame(null);
 				
 				// TODO: Check that they have received and printed message
 

@@ -92,7 +92,7 @@ class playerActivity implements Runnable {
 	public void run() {
 		try {
 			while(true) {
-				Thread.sleep(30000); // Waiting to ping players again
+				Thread.sleep(20000); // Waiting to ping players again
 				space.put("userrequest","ping", playerID);
 				System.out.println("Pinging " + playerID);
 				Thread.sleep(5000); // Waiting for player response
