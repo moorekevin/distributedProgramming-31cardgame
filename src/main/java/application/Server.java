@@ -9,6 +9,7 @@ import org.jspace.*;
 import java.util.HashMap;
 
 public class Server {
+	public static final int LOBBY_CAPACITY = 4;
 	public static final String START_URI = "tcp://localhost:9002/";
 	public static final String END_URI = "?keep";
 	public static HashMap<String, String> users;
@@ -241,7 +242,7 @@ class joinLobby implements Runnable {
 					List<Object[]> members = lobby.queryAll(new ActualField("lobbymember"),
 							new FormalField(String.class));
 
-					if (members.size() >= 4) { // If lobby is at max capacity
+					if (members.size() >= Server.LOBBY_CAPACITY) { // If lobby is at max capacity
 						startSpace.put("lobbyinfo", "error", userID, "Lobby \"" + lobbyName + "\" is full, try another!");
 					} else { // Success
 						System.out.println("User " + userID + " joining lobby " + lobbyName);
