@@ -54,21 +54,21 @@ public class Player {
 
 	public static void main(String[] args) {
 		Player player = new Player();
-		initiateStartSequence(player);
+		player.initiateStartSequence();
 	}
 	
-	private static void initiateStartSequence(Player player) {
+	private void initiateStartSequence() {
 		try {
-			player.readStartOption();
+			readStartOption();
 
-			player.joinLobby(player);
-			if (player.isHost()) {
+			joinLobby();
+			if (isHost()) {
 				
-				player.createGame();
+				createGame();
 				
 			}
 			
-			player.startPlaying();
+			startPlaying();
 			
 			
 		} catch (InterruptedException | IOException e) {
@@ -124,7 +124,7 @@ public class Player {
 		return reader.nextLine();
 	}
 
-	private void joinLobby(Player player) throws InterruptedException, IOException {
+	private void joinLobby() throws InterruptedException, IOException {
 		try {
 			String lobbyURI = (String) (startSpace.get(new ActualField("lobbyinfo"), new ActualField("join"),
 					new ActualField(id), new FormalField(String.class)))[3];
@@ -133,7 +133,7 @@ public class Player {
 			lobbySpace.put("lobbymember", id);
 			hasJoinedLobby = true;
 			new Thread(new getMessagesFromLobby()).start();
-			new Thread(new checkIfHostExit(player)).start();
+			new Thread(new checkIfHostExit()).start();
 
 			System.out.println("Joined lobby. Waiting for game to start\n");
 		} catch (UnknownHostException e) {
@@ -360,7 +360,7 @@ public class Player {
 		}
 
 	}
-
+	
 	class getMessagesFromLobby implements Runnable {
 		public void run() {
 			while (hasJoinedLobby) {
@@ -459,17 +459,12 @@ public class Player {
 	}
 	
 	class checkIfHostExit implements Runnable {
-		Player player;
-		public checkIfHostExit(Player player) {
-			this.player = player;
-		}
-		
 		public void run() {
 			try {
 				lobbySpace.query(new ActualField("exitlobby"));
 				System.out.println("Host has left, going back to lobby menu");
 				hasJoinedLobby = false;
-				initiateStartSequence(player);
+				initiateStartSequence();
 			} catch (InterruptedException e) {
 				
 			}
