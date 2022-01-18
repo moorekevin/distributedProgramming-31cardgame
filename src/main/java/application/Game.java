@@ -10,7 +10,6 @@
 
 package application;
 
-import java.util.HashMap;
 import java.util.List;
 
 import org.jspace.*;
@@ -19,11 +18,11 @@ public class Game implements Runnable {
 	private RandomSpace shuffleDeck;
 	private StackSpace discardDeck;
 	private Space lobbySpace;
-	private HashMap<String, Integer> membersID;
+	private Scoreboard membersScore;
 
 	public Game(Space lobbySpace) throws InterruptedException {
 		this.lobbySpace = lobbySpace;
-		this.membersID = new HashMap<String, Integer>();
+		this.membersScore = new Scoreboard();
 
 		new Thread(new checkInactivePlayers()).start();
 	}
@@ -48,13 +47,13 @@ public class Game implements Runnable {
 		List<Object[]> tList = lobbySpace.queryAll(new ActualField("lobbymember"), new FormalField(String.class));
 	
 		for (Object[] member : tList) {
-			if (!membersID.containsKey((String) member[1])) {
-				membersID.put((String) member[1], 0);
+			if (!membersScore.containsKey((String) member[1])) {
+				membersScore.put((String) member[1], 0);
 			}
 		}
 	
 		String winningPlayer = null;
-		for (String member : membersID.keySet()) {
+		for (String member : membersScore.keySet()) {
 			Card[] initialHand = new Card[3];
 			String id = member;
 			for (int i = 0; i < 3; i++) {
@@ -88,7 +87,7 @@ public class Game implements Runnable {
 		int i = 0;
 		
 		// Player 0 starts
-		lobbySpace.put("token", "startofturn", (String) membersID.keySet().toArray()[i]);
+		lobbySpace.put("token", "startofturn", (String) membersScore.keySet().toArray()[i]);
 		
 		String knockedPlayer = null;
 		String lastPlayer = "";
@@ -96,7 +95,7 @@ public class Game implements Runnable {
 		playingGameLoop: while (true) {
 			// Success: (response, id, action, "success", "You have picked a card!", card);
 			// Fail: (response, id, action, "error", "Illegal command", null)
-			String id = (String) membersID.keySet().toArray()[i];
+			String id = (String) membersScore.keySet().toArray()[i];
 			if (!lastPlayer.equals(id)) { // Tells all other players whose turn it is
 				tellPlayers("whosturn", id);
 				lastPlayer = id;
@@ -151,11 +150,11 @@ public class Game implements Runnable {
 
 				i++;
 				// Start over from player 0
-				if (i >= membersID.size()) {
-					i -= membersID.size();
+				if (i >= membersScore.size()) {
+					i -= membersScore.size();
 				}
 
-				String nextId = (String) membersID.keySet().toArray()[i];
+				String nextId = (String) membersScore.keySet().toArray()[i];
 
 				if (nextId.equals(knockedPlayer)) {
 					endRound();
@@ -178,7 +177,7 @@ public class Game implements Runnable {
 	}
 
 	private void tellPlayers(String what, String id) throws InterruptedException {
-		for (String member : membersID.keySet()) {
+		for (String member : membersScore.keySet()) {
 			lobbySpace.put("info", member, what, id);
 		}
 	}
@@ -186,7 +185,7 @@ public class Game implements Runnable {
 	private void endRound() throws InterruptedException {
 		tellPlayers("requestcards", "");
 
-		Object[] temp = membersID.keySet().toArray();
+		Object[] temp = membersScore.keySet().toArray();
 		
 		String[] memberList = new String[temp.length];
 
@@ -211,23 +210,21 @@ public class Game implements Runnable {
 
 	private void endGame(String winningPlayer) throws InterruptedException {
 		
-		Object[] lastSBReq = lobbySpace.getp(new ActualField("scoreboard"), new FormalField(HashMap.class)); // Getting the scoreboard from previous games
+		Object[] lastSBReq = lobbySpace.getp(new ActualField("scoreboard"), new FormalField(Scoreboard.class)); // Getting the scoreboard from previous games
 		if (lastSBReq != null) {
-			@SuppressWarnings("unchecked")
-			HashMap<String, Integer> lastScoreboard = (HashMap<String,Integer>) lastSBReq[1];
-			for (String member : membersID.keySet()) {
-				membersID.put(member, (int) lastScoreboard.get(member));
+			Scoreboard lastScoreboard = (Scoreboard) lastSBReq[1];
+			for (String member : membersScore.keySet()) {
+				membersScore.put(member, (int) lastScoreboard.get(member));
 			}
 		}
-		membersID.put(winningPlayer, (Integer) (membersID.get(winningPlayer) + 1));
+		membersScore.put(winningPlayer, (Integer) (membersScore.get(winningPlayer) + 1));
 		
-		lobbySpace.put("scoreboard", membersID);
+		lobbySpace.put("scoreboard", membersScore);
 		tellPlayers("won", winningPlayer);
 
-		for (String member : membersID.keySet()) { // Makes sure that all players has printed scoreboard
+		for (String member : membersScore.keySet()) { // Makes sure that all players has printed scoreboard
 			lobbySpace.get(new ActualField("printedscores"), new ActualField(member));	
 		}
-		setGameUp();
 	}
 	
 	private int calcPoints(Card[] hand) {
@@ -253,7 +250,7 @@ public class Game implements Runnable {
 						new FormalField(String.class), new FormalField(String.class));
 				String id = (String) inactivePlayer[1];
 				String username = (String) inactivePlayer[2];
-				membersID.remove(id);
+				membersScore.remove(id);
 				tellPlayers("inactiveplayer", username);
 				endRound();
 

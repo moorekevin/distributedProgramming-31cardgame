@@ -410,18 +410,16 @@ public class Player {
 							System.out.println("Player " + username + " won this round!");
 						}
 						      //  (scoreboard, id, memberList, score)
-						Object[] sbReq = lobbySpace.query(new ActualField("scoreboard"), new FormalField(HashMap.class));
-						@SuppressWarnings("unchecked")
-						HashMap<String,Integer> scoreboard = (HashMap<String,Integer>) sbReq[1];
-						System.out.println("Scoreboard:");
+						Object[] sbReq = lobbySpace.query(new ActualField("scoreboard"), new FormalField(Scoreboard.class));
+						Scoreboard scoreboard = (Scoreboard) sbReq[1];
+						System.out.println("\nScoreboard");
 						for (String member : scoreboard.keySet()){
 							lobbySpace.put("serverrequest", "username", id, member);
 							
 							String username = (String) (lobbySpace.get(new ActualField("serverresponse"), new ActualField("username"), new ActualField(id),
 									new FormalField(String.class)))[3];
-							System.out.println(scoreboard.get(member).getClass());
-							System.out.println(" " + username + ": " + (scoreboard.get(member)));
-							//System.out.format("  %-16s %02d%n", '"' + username + "\":", scoreboard.get(member));
+							//System.out.println(" " + username + ": " + (scoreboard.get(member)));
+							System.out.format("  %-16s %02d%n", '"' + username + "\":", scoreboard.get(member));
 						}
 						lobbySpace.put("printedscores", id);
 						break;
