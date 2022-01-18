@@ -63,9 +63,9 @@ public class Player {
 
 			joinLobby();
 			if (isHost()) {
-				
 				createGame();
-				
+			} else {
+				new Thread(new checkExit()).start();
 			}
 			
 			startPlaying();
@@ -134,8 +134,9 @@ public class Player {
 			hasJoinedLobby = true;
 			new Thread(new getMessagesFromLobby()).start();
 			new Thread(new checkIfHostExit()).start();
-
-			System.out.println("Joined lobby. Waiting for game to start\n");
+			
+			System.out.print("Joined Lobby.");
+			
 		} catch (UnknownHostException e) {
 
 			printError("Cannot find lobby, check URI");
@@ -148,6 +149,7 @@ public class Player {
 			String command = getInput("Do you want to (s)tart the game").toLowerCase(); // TODO: or (e)xit lobby?
 			if (command.equals("s")) {
 				startSpace.put("lobbyrequest", id, command, lobbyName);
+				lobbySpace.put("lockplayers", lobbyName);
 
 				Object[] t = startSpace.get(new ActualField("lobbyinfo"), new FormalField(String.class),
 						new ActualField(id), new FormalField(String.class));
@@ -156,7 +158,6 @@ public class Player {
 				} else {
 					printError((String) t[3]);
 				}
-
 			}
 			/*
 			 * else if (command.equals("e")) {
@@ -359,6 +360,28 @@ public class Player {
 			System.out.println((String) response[4]);
 		}
 
+	}
+	
+	class checkExit implements Runnable {
+		public void run() {
+			try {
+				Object[] lock = lobbySpace.queryp(new ActualField("lockplayers"), new ActualField(lobbyName));
+				// If host is creating game, players can't exit
+				if (lock != null)
+					return;
+				String input = getInput("Waiting for game to start. Press (e) to exit").toLowerCase();
+				while (!input.equals("e")) {
+					printError(input);
+					input = getInput("Try again: Waiting for game to start. Press (e) to exit").toLowerCase();
+				}
+				hasJoinedLobby = false;
+				lobbySpace.get(new ActualField("lobbymember"), new ActualField(id));
+				System.out.println("You have succesfully left " + lobbyName + "lobby");
+				initiateStartSequence();
+			} catch (InterruptedException e) {
+				e.printStackTrace();
+			}
+		}
 	}
 	
 	class getMessagesFromLobby implements Runnable {

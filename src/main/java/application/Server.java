@@ -199,7 +199,7 @@ class createLobby implements Runnable {
 				System.out.println("Created Lobby \"" + lobbyName + "\" for " + userID);
 
 				createdLobby.put("host", userID);
-				createdLobby.put("lobbyname",lobbyName);
+				createdLobby.put("lobbyname", lobbyName);
 				createdLobby.put("lobbystatus", "public");
 
 				(new joinLobby(rep, startSpace, lobbyName, userID)).run();
