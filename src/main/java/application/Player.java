@@ -161,15 +161,7 @@ public class Player {
 	}
 
 	private void startPlaying(Player player) throws InterruptedException {
-		new Thread(new gameRestarter(player)).start();
-		handSpace.getAll(new FormalField(Card.class));
-		// Get dealt cards
-		Card[] initialHand = (Card[]) (lobbySpace.get(new ActualField("dealingcards"), new ActualField(id),
-				new FormalField(Card[].class)))[2];
-		
-		for (Card thisCard : initialHand) {
-			handSpace.put(thisCard);
-		}
+		getDealtCards(player);
 		
 		while (true) {
 			getToken("startofturn");
@@ -186,6 +178,18 @@ public class Player {
 			knockOption();
 		}
 
+	}
+
+	private void getDealtCards(Player player) throws InterruptedException {
+		new Thread(new gameRestarter(player)).start();
+		handSpace.getAll(new FormalField(Card.class));
+		// Get dealt cards
+		Card[] initialHand = (Card[]) (lobbySpace.get(new ActualField("dealingcards"), new ActualField(id),
+				new FormalField(Card[].class)))[2];
+		
+		for (Card thisCard : initialHand) {
+			handSpace.put(thisCard);
+		}
 	}
 
 	private void printError(String error) {
@@ -379,9 +383,7 @@ public class Player {
 					System.out.println("Created new game");
 				}
 				lobbySpace.get(new ActualField("restartgame"), new ActualField(id));
-				player.startPlaying(player);
-				
-				
+				player.getDealtCards(player);
 			} catch (InterruptedException e) {
 				e.printStackTrace();
 			}
