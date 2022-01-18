@@ -46,21 +46,21 @@ public class Player {
         
 	public static void main(String[] args) {
 		Player player = new Player();
-		player.initiateStartSequence(player);
+		player.initiateStartSequence();
 	}
 	
-	private void initiateStartSequence(Player player) {
+	private void initiateStartSequence() {
 		try {
 			readStartOption();
 
-			joinLobby(player);
+			joinLobby();
 			if (isHost()) {
 				createGame();
 			} else {
-				new Thread(new checkExit()).start();
+//				new Thread(new checkExit()).start();
 			}
 			
-			startPlaying(player);
+			startPlaying();
 			
 			
 		} catch (InterruptedException | IOException e) {
@@ -116,7 +116,7 @@ public class Player {
 		return reader.nextLine();
 	}
 
-	private void joinLobby(Player player) throws InterruptedException, IOException {
+	private void joinLobby() throws InterruptedException, IOException {
 		try {
 			String lobbyURI = (String) (startSpace.get(new ActualField("lobbyinfo"), new ActualField("join"),
 					new ActualField(id), new FormalField(String.class)))[3];
@@ -127,7 +127,7 @@ public class Player {
 			new Thread(new getMessagesFromLobby()).start();
 			new Thread(new checkIfHostExit()).start();
 			
-			System.out.print("Joined Lobby.");
+			System.out.print("Joined Lobby. ");
 			
 		} catch (UnknownHostException e) {
 
@@ -161,8 +161,8 @@ public class Player {
 		new Thread(new Game(lobbySpace)).start();
 	}
 
-	private void startPlaying(Player player) throws InterruptedException {
-		getDealtCards(player);
+	private void startPlaying() throws InterruptedException {
+		getDealtCards();
 		
 		while (true) {
 			getToken("startofturn");
@@ -181,8 +181,8 @@ public class Player {
 
 	}
 
-	private void getDealtCards(Player player) throws InterruptedException {
-		new Thread(new gameRestarter(player)).start();
+	private void getDealtCards() throws InterruptedException {
+		new Thread(new gameRestarter()).start();
 		handSpace.getAll(new FormalField(Card.class));
 		// Get dealt cards
 		Card[] initialHand = (Card[]) (lobbySpace.get(new ActualField("dealingcards"), new ActualField(id),
@@ -360,6 +360,10 @@ public class Player {
 
 	}
 	
+	public Player getPlayer() {
+		return this;
+	}
+	
 	class checkExit implements Runnable {
 		public void run() {
 			try {
@@ -381,16 +385,12 @@ public class Player {
 			}
 		}
 	}
+	
 	class gameRestarter implements Runnable {
-		Player player;
-
-		public gameRestarter(Player player) {
-			this.player = player;
-		}
-		
 		@Override
 		public void run() {
 			try {
+				Player player = getPlayer();
 				if (isHost()) {
 					lobbySpace.get(new ActualField("restartgame"));
 					Scoreboard sb = (Scoreboard) lobbySpace.query(new ActualField("scoreboard"), new FormalField(Scoreboard.class))[1];
@@ -405,7 +405,7 @@ public class Player {
 					System.out.println("Created new game");
 				}
 				lobbySpace.get(new ActualField("restartgame"), new ActualField(id));
-				player.getDealtCards(player);
+				player.getDealtCards();
 			} catch (InterruptedException e) {
 				e.printStackTrace();
 			}
@@ -514,10 +514,8 @@ public class Player {
 	}
 	
 	class checkIfHostExit implements Runnable {
-		Player player;
 		
-		public checkIfHostExit(Player player) {
-			this.player = player;
+		public checkIfHostExit() {
 		}
 		
 		public void run() {
@@ -525,7 +523,7 @@ public class Player {
 				lobbySpace.query(new ActualField("exitlobby"));
 				System.out.println("Host has left, going back to lobby menu");
 				hasJoinedLobby = false;
-				initiateStartSequence(player);
+				initiateStartSequence();
 			} catch (InterruptedException e) {
 				
 			}
