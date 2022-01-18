@@ -46,21 +46,21 @@ public class Player {
         
 	public static void main(String[] args) {
 		Player player = new Player();
-		player.initiateStartSequence();
+		player.initiateStartSequence(player);
 	}
 	
-	private void initiateStartSequence() {
+	private void initiateStartSequence(Player player) {
 		try {
 			readStartOption();
 
-			joinLobby();
+			joinLobby(player);
 			if (isHost()) {
 				
 				createGame();
 				
 			}
 			
-			startPlaying();
+			startPlaying(player);
 			
 			
 		} catch (InterruptedException | IOException e) {
@@ -116,7 +116,7 @@ public class Player {
 		return reader.nextLine();
 	}
 
-	private void joinLobby() throws InterruptedException, IOException {
+	private void joinLobby(Player player) throws InterruptedException, IOException {
 		try {
 			String lobbyURI = (String) (startSpace.get(new ActualField("lobbyinfo"), new ActualField("join"),
 					new ActualField(id), new FormalField(String.class)))[3];
@@ -125,7 +125,7 @@ public class Player {
 			lobbySpace.put("lobbymember", id);
 			hasJoinedLobby = true;
 			new Thread(new getMessagesFromLobby()).start();
-			new Thread(new checkIfHostExit()).start();
+			new Thread(new checkIfHostExit(player)).start();
 
 			System.out.println("Joined lobby. Waiting for game to start\n");
 		} catch (UnknownHostException e) {
@@ -490,12 +490,18 @@ public class Player {
 	}
 	
 	class checkIfHostExit implements Runnable {
+		Player player;
+		
+		public checkIfHostExit(Player player) {
+			this.player = player;
+		}
+		
 		public void run() {
 			try {
 				lobbySpace.query(new ActualField("exitlobby"));
 				System.out.println("Host has left, going back to lobby menu");
 				hasJoinedLobby = false;
-				initiateStartSequence();
+				initiateStartSequence(player);
 			} catch (InterruptedException e) {
 				
 			}
