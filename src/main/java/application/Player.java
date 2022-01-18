@@ -5,7 +5,6 @@ package application;
 import java.io.IOException;
 import java.net.UnknownHostException;
 import java.util.ArrayList;
-import java.util.HashMap;
 import java.util.List;
 import java.util.Scanner;
 
@@ -15,12 +14,12 @@ import org.jspace.RemoteSpace;
 import org.jspace.SequentialSpace;
 
 public class Player {
+	private final int START_GATE = 9002;
+	private final String START_NAME = "startSpace";
 	private String username;
 	private String id;
 	private String lobbyName;
 	private Card cardInUse = null;
-	private final int START_GATE = 9002;
-	private final String START_NAME = "startSpace";
 	private RemoteSpace startSpace;
 	private RemoteSpace lobbySpace;
 	private SequentialSpace handSpace = new SequentialSpace();
@@ -35,13 +34,6 @@ public class Player {
 			username = getInput("Enter your username");
 			hasJoinedLobby = false;
 			startSpace = new RemoteSpace(uri);
-
-			/*
-			 * RemoteSpace lobby = new RemoteSpace(uriLobby); lobby.get("turn", playerid);
-			 * lobby.put("drawfromshuffle", playerid); ...do stuff... lobby.put("endturn",
-			 * playerid);
-			 * 
-			 */
 
 			startSpace.put("user connected", username);
 			id = (String) (startSpace.get(new ActualField("uniqueid"), new ActualField(username),
@@ -63,14 +55,10 @@ public class Player {
 
 			player.joinLobby(player);
 			if (player.isHost()) {
-				
-				player.createGame();
-				
+				player.createGame();				
 			}
 			
-			player.startPlaying();
-			
-			
+			player.startPlaying(player);
 		} catch (InterruptedException | IOException e) {
 			e.printStackTrace();
 		}
@@ -98,7 +86,7 @@ public class Player {
 				System.out.println("List of available lobbies:");
 				for (int i = 0; i < lobbyList.size(); i++) {
 					System.out.println(" " + (i + 1) + ") " + ((String) lobbyList.get(i)[1]) + " ("
-							+ (int) lobbyList.get(i)[2] + "/4)");
+							+ (int) lobbyList.get(i)[2] + "/" + Server.LOBBY_CAPACITY + ")");
 				}
 				System.out.println();
 			}
@@ -168,7 +156,9 @@ public class Player {
 		new Thread(new Game(lobbySpace)).start();
 	}
 
-	private void startPlaying() throws InterruptedException {		
+	private void startPlaying(Player player) throws InterruptedException {
+		new Thread(new gameRestarter(player)).start();
+		handSpace.getAll(new FormalField(Card.class));
 		// Get dealt cards
 		Card[] initialHand = (Card[]) (lobbySpace.get(new ActualField("dealingcards"), new ActualField(id),
 				new FormalField(Card[].class)))[2];
@@ -361,6 +351,39 @@ public class Player {
 
 	}
 
+	class gameRestarter implements Runnable {
+		Player player;
+
+		public gameRestarter(Player player) {
+			this.player = player;
+		}
+		
+		@Override
+		public void run() {
+			try {
+				if (isHost()) {
+					lobbySpace.get(new ActualField("restartgame"));
+					Scoreboard sb = (Scoreboard) lobbySpace.query(new ActualField("scoreboard"), new FormalField(Scoreboard.class))[1];
+					for (String member : sb.keySet()) {
+						lobbySpace.get(new ActualField("printedscores"), new ActualField(member));
+						lobbySpace.put("restartgame", member);
+					}
+					// lobby.put("lobbystatus", "private");
+					lobbySpace.get(new ActualField("lobbystatus"), new ActualField("private"));
+					lobbySpace.put("lobbystatus", "public");
+					player.createGame();
+					System.out.println("Created new game");
+				}
+				lobbySpace.get(new ActualField("restartgame"), new ActualField(id));
+				player.startPlaying(player);
+				
+				
+			} catch (InterruptedException e) {
+				e.printStackTrace();
+			}
+		}
+	}
+
 	class getMessagesFromLobby implements Runnable {
 		public void run() {
 			while (hasJoinedLobby) {
@@ -421,7 +444,11 @@ public class Player {
 							//System.out.println(" " + username + ": " + (scoreboard.get(member)));
 							System.out.format("  %-16s %02d%n", '"' + username + "\":", scoreboard.get(member));
 						}
+						if (isHost()) {
+							lobbySpace.put("restartgame");
+						}
 						lobbySpace.put("printedscores", id);
+						System.out.println("Put printedscores for id " + id);
 						break;
 					case "requestcards":
 						List<Object[]> cardList = handSpace.queryAll(new FormalField(Card.class));
