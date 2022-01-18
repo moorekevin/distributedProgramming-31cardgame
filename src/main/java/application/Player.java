@@ -50,6 +50,8 @@ public class Player {
 		player.initiateStartSequence();
 	}
 	
+	/// Game initialization and create/join methods ///
+	
 	private void initiateStartSequence() {
 		try {
 			readStartOption();
@@ -65,11 +67,6 @@ public class Player {
 		} catch (InterruptedException | IOException e) {
 			e.printStackTrace();
 		}
-	}
-
-	private boolean isHost() throws InterruptedException {
-		Object[] isHost = lobbySpace.queryp(new ActualField("host"), new ActualField(id));
-		return (isHost != null);
 	}
 
 	private void readStartOption() throws InterruptedException, IOException {
@@ -107,14 +104,7 @@ public class Player {
 			}
 		}
 	}
-
-	@SuppressWarnings("resource")
-	private String getInput(String question) {
-		Scanner reader = new Scanner(System.in);
-		System.out.print(question + "\n> ");
-		return reader.nextLine();
-	}
-
+	
 	private void joinLobby() throws InterruptedException, IOException {
 		try {
 			String lobbyURI = (String) (startSpace.get(new ActualField("lobbyinfo"), new ActualField("join"),
@@ -133,7 +123,7 @@ public class Player {
 			printError("Cannot find lobby, check URI");
 		}
 	}
-
+	
 	private void createGame() throws InterruptedException {
 
 		while (true) {
@@ -159,74 +149,20 @@ public class Player {
 
 		new Thread(new Game(lobbySpace)).start();
 	}
-
+	
+	private boolean isHost() throws InterruptedException {
+		Object[] isHost = lobbySpace.queryp(new ActualField("host"), new ActualField(id));
+		return (isHost != null);
+	}
+	
+	/// Playing methods ///
+	
 	private void startPlaying() throws InterruptedException {
 		getDealtCards();
 		play = new Thread(new Play());
 		play.start();
 	}
-	class Play implements Runnable {
-		public void run() {
-			try {
-				while (true) {
-					getToken("startofturn");
-					messageTokens.get(new ActualField("printedturn"));
-					displayHand(getHand()); // 3
-					
-					draw(); // +1
-					discard(getHand()); // 4
-					
-					
-					displayHand(getHand());
 	
-					knockOption();
-				}
-			} catch (InterruptedException e) {
-					// Do nothing
-			}
-		}
-	}
-
-	private void getDealtCards() throws InterruptedException {
-		new Thread(new gameRestarter()).start();
-		handSpace.getAll(new FormalField(Card.class));
-		// Get dealt cards
-		Card[] initialHand = (Card[]) (lobbySpace.get(new ActualField("dealingcards"), new ActualField(id),
-				new FormalField(Card[].class)))[2];
-		
-		for (Card thisCard : initialHand) {
-			handSpace.put(thisCard);
-		}
-	}
-
-	private void printError(String error) {
-		System.out.println("ERROR: \"" + error + "\"\n");
-	}
-
-	private ArrayList<Card> getHand() {
-		List<Object[]> allCards = handSpace.queryAll(new FormalField(Card.class));
-		ArrayList<Card> listToReturn = new ArrayList<Card>();
-		for (Object[] obj : allCards) {
-			Card card = ((Card) obj[0]);
-			listToReturn.add(card);
-		}
-		return listToReturn;
-	}
-
-	private void getToken(String action) throws InterruptedException {
-		lobbySpace.get(new ActualField("token"), new ActualField(action), new ActualField(id));
-	}
-
-	private void displayHand(List<Card> allCards) {
-		System.out.println("You have the following cards: ");
-		int i = 1;
-		for (Card card : allCards) {
-			System.out.print("(" + i + "): " + card.toString() + "    ");
-			i++;
-		}
-		System.out.println();
-	}
-
 	private void draw() throws InterruptedException {
 		Card topOfDiscarded = null;
 		// query top of discarded pile
@@ -239,7 +175,7 @@ public class Player {
 		getTwoCommands("s", "d", instruction, "pickshuffled", "pickdiscarded");
 		handSpace.put(cardInUse);
 	}
-
+	
 	private void discard(List<Card> allCards) throws InterruptedException {
 		getToken("discardacard");
 		displayHand(getHand());
@@ -268,12 +204,12 @@ public class Player {
 		doAnAction("discard");
 		cardInUse = null;
 	}
-
+	
 	private void knockOption() throws InterruptedException {
 		lobbySpace.put("action", "requestknock", id);
 		Boolean hasKnocked = (Boolean) lobbySpace.get(new ActualField("response"), new ActualField(id), new FormalField(Boolean.class))[2];
 		
-		   //respons
+		   //response
 		if (!hasKnocked) {
 			getToken("chooseknock");
 			String instruction = "Do you wish to (k)nock or (d)on't knock?";
@@ -282,36 +218,6 @@ public class Player {
 			doAnAction("dontknock");
 		}
 		
-	}
-
-	/*private boolean has31(List<Object[]> allCards) {
-		String suit = "" + ((Card) allCards.get(0)[0]).getSuit();
-		boolean sameSuit = false;
-		int points = 0;
-
-		for (int i = 1; i < allCards.size(); i++) {
-			sameSuit = suit.equals(((Card) allCards.get(i)[0]).getSuit());
-		}
-		for (int i = 0; i < allCards.size(); i++) {
-			points += ((Card) allCards.get(i)[0]).getPoints();
-		}
-
-		return sameSuit && points == 31;
-
-	}*/
-
-	private void getTwoCommands(String command1, String command2, String instruction, String action1, String action2)
-			throws InterruptedException {
-		String command = getInput(instruction).toLowerCase();
-		while (!(command.equals(command1) || command.equals(command2))) {
-			printError(command);
-			command = getInput("Try again: " + instruction).toLowerCase();
-		}
-		if (command.equals(command1))
-			doAnAction(action1);
-		if (command.equals(command2))
-			doAnAction(action2);
-
 	}
 
 	private void doAnAction(String action) throws InterruptedException { // discard card
@@ -365,29 +271,120 @@ public class Player {
 		}
 
 	}
+
+	/// Prints ///
+
+	private void displayHand(List<Card> allCards) {
+		System.out.println("You have the following cards: ");
+		int i = 1;
+		for (Card card : allCards) {
+			System.out.print("(" + i + "): " + card.toString() + "    ");
+			i++;
+		}
+		System.out.println();
+	}
+	
+	private void printError(String error) {
+		System.out.println("ERROR: \"" + error + "\"\n");
+	}
+
+	
+	/// Getters ///
+
+		
+
+	private void getDealtCards() throws InterruptedException {
+		new Thread(new gameRestarter()).start();
+		handSpace.getAll(new FormalField(Card.class));
+		// Get dealt cards
+		Card[] initialHand = (Card[]) (lobbySpace.get(new ActualField("dealingcards"), new ActualField(id),
+				new FormalField(Card[].class)))[2];
+		
+		for (Card thisCard : initialHand) {
+			handSpace.put(thisCard);
+		}
+	}
+	
+	
+	private ArrayList<Card> getHand() {
+		List<Object[]> allCards = handSpace.queryAll(new FormalField(Card.class));
+		ArrayList<Card> listToReturn = new ArrayList<Card>();
+		for (Object[] obj : allCards) {
+			Card card = ((Card) obj[0]);
+			listToReturn.add(card);
+		}
+		return listToReturn;
+	}
+
+	
+	@SuppressWarnings("resource") 
+	private String getInput(String question) {
+		Scanner reader = new Scanner(System.in);
+		System.out.print(question + "\n> ");
+		return reader.nextLine();
+	}
+
+	private void getTwoCommands(String command1, String command2, String instruction, String action1, String action2)
+			throws InterruptedException {
+		String command = getInput(instruction).toLowerCase();
+		while (!(command.equals(command1) || command.equals(command2))) {
+			printError(command);
+			command = getInput("Try again: " + instruction).toLowerCase();
+		}
+		if (command.equals(command1))
+			doAnAction(action1);
+		if (command.equals(command2))
+			doAnAction(action2);
+	}
+	
+	private void getToken(String action) throws InterruptedException {
+		lobbySpace.get(new ActualField("token"), new ActualField(action), new ActualField(id));
+	}
+
 	
 	public Player getPlayer() {
 		return this;
 	}
 	
-	class checkExit implements Runnable {
+	
+	
+	
+	/*private boolean has31(List<Object[]> allCards) {
+		String suit = "" + ((Card) allCards.get(0)[0]).getSuit();
+		boolean sameSuit = false;
+		int points = 0;
+
+		for (int i = 1; i < allCards.size(); i++) {
+			sameSuit = suit.equals(((Card) allCards.get(i)[0]).getSuit());
+		}
+		for (int i = 0; i < allCards.size(); i++) {
+			points += ((Card) allCards.get(i)[0]).getPoints();
+		}
+
+		return sameSuit && points == 31;
+
+	}*/
+
+	/// Classes ///
+	
+	class Play implements Runnable {
 		public void run() {
 			try {
-				Object[] lock = lobbySpace.queryp(new ActualField("lockplayers"), new ActualField(lobbyName));
-				// If host is creating game, players can't exit
-				if (lock != null)
-					return;
-				String input = getInput("Waiting for game to start. Press (e) to exit").toLowerCase();
-				while (!input.equals("e")) {
-					printError(input);
-					input = getInput("Try again: Waiting for game to start. Press (e) to exit").toLowerCase();
+				while (true) {
+					getToken("startofturn");
+					messageTokens.get(new ActualField("printedturn"));
+					displayHand(getHand()); // 3
+					
+					draw(); // +1
+					discard(getHand()); // 4
+					
+					
+					displayHand(getHand());
+	
+					knockOption();
 				}
-				hasJoinedLobby = false;
-				lobbySpace.get(new ActualField("lobbymember"), new ActualField(id));
-				System.out.println("You have succesfully left " + lobbyName + "lobby");
-				initiateStartSequence();
 			} catch (InterruptedException e) {
-				e.printStackTrace();
+					// Do nothing
 			}
 		}
 	}
@@ -543,6 +540,8 @@ public class Player {
 		}
 	}
 }
+
+
 
 //   put = ("action",command,userid)
 //   get = ("response", userid, message, card (optional) )
