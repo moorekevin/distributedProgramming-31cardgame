@@ -162,20 +162,6 @@ public class Player {
 
 	private void startPlaying() throws InterruptedException {
 		getDealtCards();
-		
-		/*while (true) {
-			getToken("startofturn");
-			messageTokens.get(new ActualField("printedturn"));
-			displayHand(getHand()); // 3
-			
-			draw(); // +1
-			discard(getHand()); // 4
-			
-			
-			displayHand(getHand());
-
-			knockOption();
-		}*/
 		play = new Thread(new Play());
 		play.start();
 	}
