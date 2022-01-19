@@ -31,7 +31,7 @@ public class Player {
 
 
 	public Player() {
-		final String uri = "tcp://localhost:" + START_GATE + "/" + START_NAME + "?keep";
+		final String uri = "tcp://25.62.120.1:" + START_GATE + "/" + START_NAME + "?keep";
 		try {
 			username = getInput("Enter your username");
 			hasJoinedLobby = false;
@@ -237,7 +237,6 @@ public class Player {
 		case "31":
 			response = (lobbySpace.get(new ActualField("response"), new ActualField(id), new ActualField(action),
 					new FormalField(String.class), new FormalField(String.class)));
-//			lobbySpace.put("action", action, id, cardInUse);
 			break;
 
 		default:
@@ -391,7 +390,6 @@ public class Player {
 		@Override
 		public void run() {
 			try {
-				Player player = getPlayer();
 				if (isHost()) {
 					lobbySpace.get(new ActualField("restartgame"));
 					Scoreboard sb = (Scoreboard) lobbySpace.query(new ActualField("scoreboard"), new FormalField(Scoreboard.class))[1];
