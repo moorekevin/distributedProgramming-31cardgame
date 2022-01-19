@@ -10,7 +10,7 @@ import java.util.HashMap;
 
 public class Server {
 	public static final int LOBBY_CAPACITY = 4;
-	public static final String START_URI = "tcp://25.62.120.1:9002/";
+	public static final String START_URI = "tcp://localhost:9002/";
 	public static final String END_URI = "?keep";
 	public static HashMap<String, String> users;
 
@@ -92,7 +92,7 @@ class playerActivity implements Runnable {
 	public void run() {
 		try {
 			while(true) {
-				Thread.sleep(10000); // Waiting to ping players again
+				Thread.sleep(5000); // Waiting to ping players again
 				space.put("userrequest", "ping", playerID);
 				Thread.sleep(5000); // Waiting for player response
 				Object[] response = space.getp(new ActualField("userresponse"), new ActualField("ping"), new ActualField(playerID));
@@ -107,9 +107,12 @@ class playerActivity implements Runnable {
 						lobby.put("inactiveplayer", playerID, Server.users.get(playerID));
 						lobby.get(new ActualField("lobbymember"), new ActualField(playerID));
 						Server.users.remove(playerID);
-						Integer cap = (Integer) space.get(new ActualField("lobbyname"), new ActualField(lobbyName), new FormalField(Integer.class))[2];
-						System.out.println("-------- " + (cap - 1));
-						space.put("lobbyname", lobbyName, cap - 1);
+						Object[] t = space.getp(new ActualField("lobbyname"), new ActualField(lobbyName), new FormalField(Integer.class));
+						if (t != null) {
+							Integer cap = (Integer) t[2]; 
+							// System.out.println("-------- " + (cap - 1));
+							space.put("lobbyname", lobbyName, cap - 1);
+						}
 					}
 					System.out.println("Didnt get response for " + playerID);
 					break;
@@ -200,7 +203,7 @@ class createLobby implements Runnable {
 				SequentialSpace createdLobby = new SequentialSpace();
 				rep.add(lobbyName, createdLobby);
 				startSpace.put("lobbyname", lobbyName, 0); // Used for giving an overview of which lobbies are available to players
-				System.out.println("00000000");
+				// System.out.println("00000000");
 				System.out.println("Created Lobby \"" + lobbyName + "\" for " + userID);
 
 				createdLobby.put("host", userID);
@@ -261,7 +264,7 @@ class joinLobby implements Runnable {
 						String lobbyURI = Server.START_URI + lobbyName + Server.END_URI;
 						Object[] t = startSpace.get(new ActualField("lobbyname"), new ActualField(lobbyName), new FormalField(Integer.class));
 						int cap = (int) t[2] + 1;
-						System.out.println("+++++++ " + cap);
+						// System.out.println("+++++++ " + cap);
 						startSpace.put("lobbyname", lobbyName, cap);
 						startSpace.put("lobbyinfo", "join", userID, lobbyURI);
 						// Start pinging user in lobby
