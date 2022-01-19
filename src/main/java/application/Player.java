@@ -26,11 +26,14 @@ public class Player {
 	private SequentialSpace messageTokens = new SequentialSpace();
 	private Thread play;
 	private Thread createAndPlay;
+	private Thread game;
+	private int counter;
 	
 	private boolean hasJoinedLobby;
 
 
 	public Player() {
+		counter = 0;
 		final String uri = "tcp://25.62.120.1:" + START_GATE + "/" + START_NAME + "?keep";
 		try {
 			username = getInput("Enter your username");
@@ -139,6 +142,11 @@ public class Player {
 	private void startPlaying() throws InterruptedException {
 		if (play != null) {
 			play.interrupt();
+			try {
+				lobbySpace.put("readytorestart");
+			} catch (InterruptedException e1) {
+				e1.printStackTrace();
+			}
 		}
 		getDealtCards();
 		play = new Thread(new Play());
@@ -315,7 +323,8 @@ public class Player {
 	}
 	
 	private void getToken(String action) throws InterruptedException {
-		lobbySpace.get(new ActualField("token"), new ActualField(action), new ActualField(id));
+		String ac = (String) (lobbySpace.get(new ActualField("token"), new ActualField(action), new ActualField(id)))[1];
+		if (ac.equals("startofturn")) counter++;
 	}
 
 	
@@ -323,8 +332,8 @@ public class Player {
 		return this;
 	}
 	
-	private void createGame() throws InterruptedException {
-
+	private void createGame() throws InterruptedException{
+		
 		while (true) {
 			String command = getInput("Do you want to (s)tart the game").toLowerCase();
 			if (command.equals("s")) {
@@ -344,7 +353,14 @@ public class Player {
 			 * }
 			 */
 		}
-		new Thread(new Game(lobbySpace)).start();
+		if (game != null) {
+			game.interrupt();
+			// remove all old tokens
+			lobbySpace.getAll(new ActualField("token"), new FormalField(String.class), new FormalField(String.class));
+		}
+		game = new Thread(new Game(lobbySpace));
+		game.start();
+		
 	}
 
 	/// Threads ///
@@ -354,21 +370,49 @@ public class Player {
 			try {
 				Player player = getPlayer();
 				if (player.isHost()) {
+					if (play != null) {
+						play.interrupt();
+						// Check if all players are ready to play
+						Scoreboard sb = (Scoreboard) lobbySpace.query(new ActualField("scoreboard"), new FormalField(Scoreboard.class))[1];
+						for (int i = 0; i < sb.keySet().size()-1; i++) {
+							lobbySpace.get(new ActualField("readytorestart"));
+						}
+					}
+					
 					player.createGame();
 				}
 				player.startPlaying();
 			} catch (InterruptedException e) {
 				// Do nothing
+				
 			} 
 		}
 		
 	}
+	
+	
+	/* P1 is host
+	P1 CreateAndPlayGame() -> p1.createGame(); -> p1.startPlaying();
+	P2 CreateAndPlayGame() -> p2.startPlaying 
+	
+	p1.createGame() -> Close other game thread -> new Game Thread -> Put token startTurn
+	
+	pX.startPlaying() -> Close old Play Thread -> new Play Thread -> Get token startTurn
+	
+	P3
+	
+	P1  
+	P2
+	
+	P3
+	*/
 	
 	class Play implements Runnable {
 		public void run() {
 			try {
 				while (true) {
 					getToken("startofturn");
+					 
 					System.out.println("got turn!!!");
 					messageTokens.get(new ActualField("printedturn"));
 					displayHand(getHand()); // 3
@@ -498,7 +542,6 @@ public class Player {
 						
 						String username = (String) (lobbySpace.get(new ActualField("serverresponse"), new ActualField("username"), new ActualField(id),
 								new FormalField(String.class)))[3];
-						//System.out.println(" " + username + ": " + (scoreboard.get(member)));
 						System.out.format("  %-16s %02d%n", '"' + username + "\":", scoreboard.get(member));
 			}
 			if (isHost()) {

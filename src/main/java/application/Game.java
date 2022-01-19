@@ -79,7 +79,7 @@ public class Game implements Runnable {
 		try {
 			setGameUp();
 		} catch (InterruptedException e) {
-			e.printStackTrace();
+			// Do nothing
 		}
 	}
 	
@@ -88,7 +88,7 @@ public class Game implements Runnable {
 		
 		// Player 0 starts
 		lobbySpace.put("token", "startofturn", (String) membersScore.keySet().toArray()[i]);
-		System.out.println("Put next turn for: " + membersScore.keySet().toArray()[i]);
+		System.out.println("Initialization: Put next turn for: " + membersScore.keySet().toArray()[i]);
 		String knockedPlayer = null;
 		String lastPlayer = "";
 				
@@ -161,7 +161,7 @@ public class Game implements Runnable {
 
 				} else {
 					lobbySpace.put("token", "startofturn", nextId); // Next player's turn
-					System.out.println("Put next turn for: " + nextId);
+					System.out.println("Knock: Put next turn for: " + nextId);
 				}
 				break;
 			case "31":
@@ -234,6 +234,7 @@ public class Game implements Runnable {
 		if (checkInactivePlayers != null) {
 			checkInactivePlayers.interrupt();
 		}
+		
 	}
 	
 	private int calcPoints(Card[] hand) {
@@ -265,7 +266,7 @@ public class Game implements Runnable {
 				endGame(null);
 				
 			} catch (InterruptedException e) {
-				// Donothing
+				// Do nothing
 			}
 
 		}
