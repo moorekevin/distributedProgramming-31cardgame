@@ -42,7 +42,7 @@ public class Server {
 				users.put(uniqueID, username);
 				startSpace.put("uniqueid", username, uniqueID);
 
-				System.out.println(username + " has connected");
+				System.out.println(username + " has connected" + " assigned ID " + uniqueID);
 			} catch (InterruptedException e) {
 				e.printStackTrace();
 			}
