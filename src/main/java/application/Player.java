@@ -323,8 +323,8 @@ public class Player {
 	}
 	
 	private void getToken(String action) throws InterruptedException {
-		String ac = (String) (lobbySpace.get(new ActualField("token"), new ActualField(action), new ActualField(id)))[1];
-		if (ac.equals("startofturn")) counter++;
+		lobbySpace.get(new ActualField("token"), new ActualField(action), new ActualField(id));
+		
 	}
 
 	
@@ -356,7 +356,11 @@ public class Player {
 		if (game != null) {
 			game.interrupt();
 			// remove all old tokens
-			lobbySpace.getAll(new ActualField("token"), new FormalField(String.class), new FormalField(String.class));
+			List<Object[]> tokens = lobbySpace.getAll(new ActualField("token"), new FormalField(String.class), new FormalField(String.class));
+			System.out.println("ALL TOKENS:");
+			for (Object[] token : tokens) {
+				System.out.println((String) token[1] + " - " + (String) token[2]);
+			}
 		}
 		game = new Thread(new Game(lobbySpace));
 		game.start();
@@ -512,9 +516,11 @@ public class Player {
 									new FormalField(String.class)))[3];
 							System.out.println("Player " + username + " won this round!");
 						}
+						play.interrupt();
 						showSBandRestart();
 						break;
 					case "quit":
+						play.interrupt();
 						showSBandRestart();
 						break;
 					case "requestcards":
