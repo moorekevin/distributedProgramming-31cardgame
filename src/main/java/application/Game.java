@@ -18,12 +18,14 @@ public class Game implements Runnable {
 	private StackSpace discardDeck;
 	private Space lobbySpace;
 	private Scoreboard membersScore;
+	private Thread checkInactivePlayers;
 
 	public Game(Space lobbySpace) throws InterruptedException {
 		this.lobbySpace = lobbySpace;
 		this.membersScore = new Scoreboard();
 
-		new Thread(new checkInactivePlayers()).start();
+		checkInactivePlayers = new Thread(new checkInactivePlayers());
+		checkInactivePlayers.start();
 	}
 	
 	private void setGameUp() throws InterruptedException{
@@ -229,6 +231,9 @@ public class Game implements Runnable {
 		}
 		
 		lobbySpace.put("scoreboard", membersScore);
+		if (checkInactivePlayers != null) {
+			checkInactivePlayers.interrupt();
+		}
 	}
 	
 	private int calcPoints(Card[] hand) {
@@ -258,10 +263,8 @@ public class Game implements Runnable {
 				tellPlayers("inactiveplayer", username);
 				endGame(null);
 				
-				// TODO: Check that they have received and printed message
-
 			} catch (InterruptedException e) {
-				e.printStackTrace();
+				// Donothing
 			}
 
 		}

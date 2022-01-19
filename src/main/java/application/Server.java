@@ -106,6 +106,7 @@ class playerActivity implements Runnable {
 						rep.remove(lobbyName);
 					} else {
 						lobby.put("inactiveplayer", playerID, Server.users.get(playerID));
+						lobby.get(new ActualField("lobbymember"), new ActualField(playerID));
 						Server.users.remove(playerID);
 					}
 					System.out.println("Didnt get response for " + playerID);

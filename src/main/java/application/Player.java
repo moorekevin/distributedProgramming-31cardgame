@@ -25,6 +25,7 @@ public class Player {
 	private SequentialSpace handSpace = new SequentialSpace();
 	private SequentialSpace messageTokens = new SequentialSpace();
 	private Thread play;
+	private Thread createAndPlay;
 	
 	private boolean hasJoinedLobby;
 
@@ -57,12 +58,15 @@ public class Player {
 			readStartOption();
 
 			joinLobby();
-			if (isHost()) {
+			
+			createAndPlay = new Thread(new CreateAndPlayGame());
+			createAndPlay.start();
+			/*if (isHost()) {
 				createGame();
 			} 
 			
 			startPlaying();
-			
+			*/
 			
 		} catch (InterruptedException | IOException e) {
 			e.printStackTrace();
@@ -124,31 +128,6 @@ public class Player {
 		}
 	}
 	
-	private void createGame() throws InterruptedException {
-
-		while (true) {
-			String command = getInput("Do you want to (s)tart the game").toLowerCase(); // TODO: or (e)xit lobby?
-			if (command.equals("s")) {
-				startSpace.put("lobbyrequest", id, command, lobbyName);
-				lobbySpace.put("lockplayers", lobbyName);
-
-				Object[] t = startSpace.get(new ActualField("lobbyinfo"), new FormalField(String.class),
-						new ActualField(id), new FormalField(String.class));
-				if (!((String) t[1]).equals("error")) {
-					break;
-				} else {
-					printError((String) t[3]);
-				}
-			}
-			/*
-			 * else if (command.equals("e")) {
-			 * 
-			 * }
-			 */
-		}
-
-		new Thread(new Game(lobbySpace)).start();
-	}
 	
 	private boolean isHost() throws InterruptedException {
 		Object[] isHost = lobbySpace.queryp(new ActualField("host"), new ActualField(id));
@@ -158,6 +137,9 @@ public class Player {
 	/// Playing methods ///
 	
 	private void startPlaying() throws InterruptedException {
+		if (play != null) {
+			play.interrupt();
+		}
 		getDealtCards();
 		play = new Thread(new Play());
 		play.start();
@@ -290,8 +272,12 @@ public class Player {
 
 	
 	/// Getters ///
-
-		
+	@SuppressWarnings("resource") 
+	private String getInput(String question) {
+		Scanner reader = new Scanner(System.in);
+		System.out.print(question + "\n> ");
+		return reader.nextLine();
+	}
 
 	private void getDealtCards() throws InterruptedException {
 		new Thread(new gameRestarter()).start();
@@ -316,14 +302,6 @@ public class Player {
 		return listToReturn;
 	}
 
-	
-	@SuppressWarnings("resource") 
-	private String getInput(String question) {
-		Scanner reader = new Scanner(System.in);
-		System.out.print(question + "\n> ");
-		return reader.nextLine();
-	}
-
 	private void getTwoCommands(String command1, String command2, String instruction, String action1, String action2)
 			throws InterruptedException {
 		String command = getInput(instruction).toLowerCase();
@@ -346,26 +324,46 @@ public class Player {
 		return this;
 	}
 	
-	
-	
-	
-	/*private boolean has31(List<Object[]> allCards) {
-		String suit = "" + ((Card) allCards.get(0)[0]).getSuit();
-		boolean sameSuit = false;
-		int points = 0;
+	private void createGame() throws InterruptedException {
 
-		for (int i = 1; i < allCards.size(); i++) {
-			sameSuit = suit.equals(((Card) allCards.get(i)[0]).getSuit());
+		while (true) {
+			String command = getInput("Do you want to (s)tart the game").toLowerCase();
+			if (command.equals("s")) {
+				startSpace.put("lobbyrequest", id, command, lobbyName);
+
+				Object[] t = startSpace.get(new ActualField("lobbyinfo"), new FormalField(String.class),
+						new ActualField(id), new FormalField(String.class));
+				if (!((String) t[1]).equals("error")) {
+					break;
+				} else {
+					printError((String) t[3]);
+				}
+			}
+			/*
+			 * else if (command.equals("e")) {
+			 * 
+			 * }
+			 */
 		}
-		for (int i = 0; i < allCards.size(); i++) {
-			points += ((Card) allCards.get(i)[0]).getPoints();
+		new Thread(new Game(lobbySpace)).start();
+	}
+
+	/// Threads ///
+	class CreateAndPlayGame implements Runnable {
+		@Override
+		public void run() {
+			try {
+				Player player = getPlayer();
+				if (player.isHost()) {
+					player.createGame();
+				}
+				player.startPlaying();
+			} catch (InterruptedException e) {
+				// Do nothing
+			} 
 		}
-
-		return sameSuit && points == 31;
-
-	}*/
-
-	/// Classes ///
+		
+	}
 	
 	class Play implements Runnable {
 		public void run() {
@@ -404,11 +402,15 @@ public class Player {
 					// lobby.put("lobbystatus", "private");
 					lobbySpace.get(new ActualField("lobbystatus"), new ActualField("private"));
 					lobbySpace.put("lobbystatus", "public");
-					player.createGame();
 					System.out.println("Created new game");
 				}
 				lobbySpace.get(new ActualField("restartgame"), new ActualField(id));
-				player.startPlaying();
+				
+				
+				
+				createAndPlay.interrupt();
+				createAndPlay = new Thread(new CreateAndPlayGame());
+				createAndPlay.start();
 			} catch (InterruptedException e) {
 				e.printStackTrace();
 			}
@@ -466,7 +468,6 @@ public class Player {
 						break;
 					case "quit":
 						showSBandRestart();
-						// TODO: Here aryan
 						play.interrupt();
 						break;
 					case "requestcards":
