@@ -94,14 +94,13 @@ class playerActivity implements Runnable {
 			while(true) {
 				Thread.sleep(20000); // Waiting to ping players again
 				space.put("userrequest","ping", playerID);
-				System.out.println("Pinging " + playerID);
 				Thread.sleep(5000); // Waiting for player response
 				Object[] response = space.getp(new ActualField("userresponse"),new ActualField("ping"), new ActualField(playerID));
 				if (response == (null)) {
 					String host = (String) (lobby.query(new ActualField("host"), new FormalField(String.class)))[1];
+					String lobbyName = (String) (lobby.query(new ActualField("lobbyname"), new FormalField(String.class)))[1];
 					if (host.equals(playerID)) {
 						lobby.put("exitlobby");
-						String lobbyName = (String) (lobby.query(new ActualField("lobbyname"), new FormalField(String.class)))[1];
 						space.get(new ActualField("lobbyname"), new ActualField(lobbyName), new FormalField(Integer.class));
 						rep.remove(lobbyName);
 					} else {
@@ -109,6 +108,8 @@ class playerActivity implements Runnable {
 						lobby.get(new ActualField("lobbymember"), new ActualField(playerID));
 						Server.users.remove(playerID);
 					}
+					Integer cap = (Integer) space.get(new ActualField("lobbyname"), new ActualField(lobbyName), new FormalField(Integer.class))[2];
+					space.put("lobbyname", lobbyName, cap - 1);
 					System.out.println("Didnt get response for " + playerID);
 					break;
 				}

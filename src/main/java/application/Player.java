@@ -120,7 +120,7 @@ public class Player {
 			new Thread(new getMessagesFromLobby()).start();
 			new Thread(new checkIfHostExit()).start();
 			
-			System.out.print("Joined Lobby. ");
+			System.out.println("Joined lobby. Waiting for game to start.");
 			
 		} catch (UnknownHostException e) {
 
@@ -369,6 +369,7 @@ public class Player {
 			try {
 				while (true) {
 					getToken("startofturn");
+					System.out.println("got turn!!!");
 					messageTokens.get(new ActualField("printedturn"));
 					displayHand(getHand()); // 3
 					
@@ -400,7 +401,6 @@ public class Player {
 					// lobby.put("lobbystatus", "private");
 					lobbySpace.get(new ActualField("lobbystatus"), new ActualField("private"));
 					lobbySpace.put("lobbystatus", "public");
-					System.out.println("Created new game");
 				}
 				lobbySpace.get(new ActualField("restartgame"), new ActualField(id));
 				
@@ -466,13 +466,12 @@ public class Player {
 						break;
 					case "quit":
 						showSBandRestart();
-						play.interrupt();
 						break;
 					case "requestcards":
 						List<Object[]> cardList = handSpace.queryAll(new FormalField(Card.class));
-						Card[] cards = new Card[3];
+						Card[] cards = new Card[Game.CARDS_IN_HAND];
 						for (int i = 0; i < cards.length; i++) {
-							cards[i] = (Card) cardList.get(0)[0];
+							cards[i] = (Card) cardList.get(i)[0];
 						}
 						
 						lobbySpace.put("playerhand", id, cards);

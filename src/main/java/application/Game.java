@@ -12,7 +12,7 @@ import java.util.List;
 import org.jspace.*;
 
 public class Game implements Runnable {
-	private final int CARDS_IN_HAND = 3;
+	public static final int CARDS_IN_HAND = 3;
 	private final int WINNING_SCORE = 31;
 	private RandomSpace shuffleDeck;
 	private StackSpace discardDeck;
@@ -77,7 +77,6 @@ public class Game implements Runnable {
 
 	public void run() {
 		try {
-			System.out.println("Running game");
 			setGameUp();
 		} catch (InterruptedException e) {
 			e.printStackTrace();
@@ -89,7 +88,7 @@ public class Game implements Runnable {
 		
 		// Player 0 starts
 		lobbySpace.put("token", "startofturn", (String) membersScore.keySet().toArray()[i]);
-		
+		System.out.println("Put next turn for: " + membersScore.keySet().toArray()[i]);
 		String knockedPlayer = null;
 		String lastPlayer = "";
 				
@@ -162,6 +161,7 @@ public class Game implements Runnable {
 
 				} else {
 					lobbySpace.put("token", "startofturn", nextId); // Next player's turn
+					System.out.println("Put next turn for: " + nextId);
 				}
 				break;
 			case "31":
@@ -261,6 +261,7 @@ public class Game implements Runnable {
 				String username = (String) inactivePlayer[2];
 				membersScore.remove(id);
 				tellPlayers("inactiveplayer", username);
+				// lobbySpace.getAll(new ActualField("token"),new FormalField(String.class),new FormalField(String.class));
 				endGame(null);
 				
 			} catch (InterruptedException e) {
