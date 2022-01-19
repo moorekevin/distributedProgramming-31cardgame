@@ -92,10 +92,10 @@ class playerActivity implements Runnable {
 	public void run() {
 		try {
 			while(true) {
-				Thread.sleep(20000); // Waiting to ping players again
-				space.put("userrequest","ping", playerID);
+				Thread.sleep(10000); // Waiting to ping players again
+				space.put("userrequest", "ping", playerID);
 				Thread.sleep(5000); // Waiting for player response
-				Object[] response = space.getp(new ActualField("userresponse"),new ActualField("ping"), new ActualField(playerID));
+				Object[] response = space.getp(new ActualField("userresponse"), new ActualField("ping"), new ActualField(playerID));
 				if (response == (null)) {
 					String host = (String) (lobby.query(new ActualField("host"), new FormalField(String.class)))[1];
 					String lobbyName = (String) (lobby.query(new ActualField("lobbyname"), new FormalField(String.class)))[1];
@@ -107,9 +107,10 @@ class playerActivity implements Runnable {
 						lobby.put("inactiveplayer", playerID, Server.users.get(playerID));
 						lobby.get(new ActualField("lobbymember"), new ActualField(playerID));
 						Server.users.remove(playerID);
+						Integer cap = (Integer) space.get(new ActualField("lobbyname"), new ActualField(lobbyName), new FormalField(Integer.class))[2];
+						System.out.println("-------- " + (cap - 1));
+						space.put("lobbyname", lobbyName, cap - 1);
 					}
-					Integer cap = (Integer) space.get(new ActualField("lobbyname"), new ActualField(lobbyName), new FormalField(Integer.class))[2];
-					space.put("lobbyname", lobbyName, cap - 1);
 					System.out.println("Didnt get response for " + playerID);
 					break;
 				}
@@ -199,6 +200,7 @@ class createLobby implements Runnable {
 				SequentialSpace createdLobby = new SequentialSpace();
 				rep.add(lobbyName, createdLobby);
 				startSpace.put("lobbyname", lobbyName, 0); // Used for giving an overview of which lobbies are available to players
+				System.out.println("00000000");
 				System.out.println("Created Lobby \"" + lobbyName + "\" for " + userID);
 
 				createdLobby.put("host", userID);
@@ -232,7 +234,7 @@ class joinLobby implements Runnable {
 	public void run() {
 		try {
 			if (lobby == null) { // If no lobby with that name
-				System.out.println("User " + userID + "tried to join\"" + lobbyName + "\" but it is unavailable");
+				System.out.println("User " + userID + "tried to join \"" + lobbyName + "\" but it is unavailable");
 				startSpace.put("lobbyinfo", "error", userID, "Lobby \"" + lobbyName + "\" is unavailable");
 			} else {
 				String status = (String) (lobby.query(new ActualField("lobbystatus"),
@@ -259,6 +261,7 @@ class joinLobby implements Runnable {
 						String lobbyURI = Server.START_URI + lobbyName + Server.END_URI;
 						Object[] t = startSpace.get(new ActualField("lobbyname"), new ActualField(lobbyName), new FormalField(Integer.class));
 						int cap = (int) t[2] + 1;
+						System.out.println("+++++++ " + cap);
 						startSpace.put("lobbyname", lobbyName, cap);
 						startSpace.put("lobbyinfo", "join", userID, lobbyURI);
 						// Start pinging user in lobby
