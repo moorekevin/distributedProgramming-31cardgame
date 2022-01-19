@@ -31,7 +31,7 @@ public class Player {
 
 
 	public Player() {
-		final String uri = "tcp://25.62.120.1:" + START_GATE + "/" + START_NAME + "?keep";
+		final String uri = "tcp://localhost:" + START_GATE + "/" + START_NAME + "?keep";
 		try {
 			username = getInput("Enter your username");
 			hasJoinedLobby = false;
@@ -447,6 +447,12 @@ public class Player {
 						}
 						break;
 
+					case "joinedplayer":
+						//if (!playerID.equals(id)) {
+							// PlayerID is not ID but a username here
+							System.out.println("Player " + playerID + " has joined the lobby");
+						//}
+						break;
 					case "inactiveplayer":
 						// PlayerID is not ID but a username here
 						System.out.println("Player " + playerID + " has left the game. Game restarting");

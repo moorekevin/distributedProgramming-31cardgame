@@ -10,7 +10,7 @@ import java.util.HashMap;
 
 public class Server {
 	public static final int LOBBY_CAPACITY = 4;
-	public static final String START_URI = "tcp://25.62.120.1:9002/";
+	public static final String START_URI = "tcp://localhost:9002/";
 	public static final String END_URI = "?keep";
 	public static HashMap<String, String> users;
 
@@ -248,6 +248,14 @@ class joinLobby implements Runnable {
 						startSpace.put("lobbyinfo", "error", userID, "Lobby \"" + lobbyName + "\" is full, try another!");
 					} else { // Success
 						System.out.println("User " + userID + " joining lobby " + lobbyName);
+						
+						// Puts to all players in members
+						// Player himself has not been added to members yet
+						for (Object[] member : members) {
+							lobby.put("info", (String) member[1], "joinedplayer", Server.users.get(userID));
+						}
+						
+						
 						String lobbyURI = Server.START_URI + lobbyName + Server.END_URI;
 						Object[] t = startSpace.get(new ActualField("lobbyname"), new ActualField(lobbyName), new FormalField(Integer.class));
 						int cap = (int) t[2] + 1;
