@@ -319,7 +319,6 @@ public class Player {
 	
 	private void getToken(String action) throws InterruptedException {
 		lobbySpace.get(new ActualField("token"), new ActualField(action), new ActualField(id));
-		System.out.println("Got token for " + action);
 	}
 
 	
@@ -423,6 +422,7 @@ public class Player {
 					displayHand(getHand());
 	
 					knockOption();
+					lobbySpace.getAll(new ActualField("token"), new ActualField("startofturn"), new ActualField(id));
 				}
 			} catch (InterruptedException e) {
 					// Do nothing

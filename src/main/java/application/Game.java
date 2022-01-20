@@ -87,12 +87,13 @@ public class Game implements Runnable {
 		int i = 0;
 		
 		// Player 0 starts
-		lobbySpace.put("token", "startofturn", (String) membersScore.keySet().toArray()[i]);
+
 		System.out.println("Initialization: Put next turn for: " + membersScore.keySet().toArray()[i]);
 		String knockedPlayer = null;
 		String lastPlayer = "";
 				
 		playingGameLoop: while (true) {
+			lobbySpace.put("token", "startofturn", (String) membersScore.keySet().toArray()[i]);
 			// Success: (response, id, action, "success", "You have picked a card!", card);
 			// Fail: (response, id, action, "error", "Illegal command", null)
 			String id = (String) membersScore.keySet().toArray()[i];
