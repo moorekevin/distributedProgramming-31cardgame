@@ -27,13 +27,11 @@ public class Player {
 	private Thread play;
 	private Thread createAndPlay;
 	private Thread game;
-	private int counter;
 	
 	private boolean hasJoinedLobby;
 
 
 	public Player() {
-		counter = 0;
 		final String uri = "tcp://25.62.120.1:" + START_GATE + "/" + START_NAME + "?keep";
 		try {
 			username = getInput("Enter your username");
@@ -199,9 +197,8 @@ public class Player {
 		lobbySpace.put("action", "requestknock", id);
 		Boolean hasKnocked = (Boolean) lobbySpace.get(new ActualField("response"), new ActualField(id), new FormalField(Boolean.class))[2];
 		
-		   //response
+		getToken("chooseknock");
 		if (!hasKnocked) {
-			getToken("chooseknock");
 			String instruction = "Do you wish to (k)nock or (d)on't knock?";
 			getTwoCommands("k", "d", instruction, "knock", "dontknock");
 		} else {
@@ -248,11 +245,9 @@ public class Player {
 			break;
 
 		default:
-			// TODO: Error stuff
 			return;
 		}
 
-		// TODO: Maybe just delete this part
 		if (((String) response[3]).equals("error")) {
 			printError((String) response[4]);
 		} else {
@@ -446,7 +441,6 @@ public class Player {
 						lobbySpace.get(new ActualField("printedscores"), new ActualField(member));
 						lobbySpace.put("restartgame", member);
 					}
-					// lobby.put("lobbystatus", "private");
 					lobbySpace.get(new ActualField("lobbystatus"), new ActualField("private"));
 					lobbySpace.put("lobbystatus", "public");
 				}
@@ -496,10 +490,7 @@ public class Player {
 						break;
 
 					case "joinedplayer":
-						//if (!playerID.equals(id)) {
-							// PlayerID is not ID but a username here
-							System.out.print("\nPlayer " + playerID + " has joined the lobby\n>");
-						//}
+						System.out.print("\nPlayer " + playerID + " has joined the lobby\n> ");
 						break;
 					case "inactiveplayer":
 						// PlayerID is not ID but a username here
