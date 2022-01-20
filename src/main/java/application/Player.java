@@ -498,7 +498,7 @@ public class Player {
 					case "joinedplayer":
 						//if (!playerID.equals(id)) {
 							// PlayerID is not ID but a username here
-							System.out.println("Player " + playerID + " has joined the lobby");
+							System.out.println("\nPlayer " + playerID + " has joined the lobby\n>");
 						//}
 						break;
 					case "inactiveplayer":
