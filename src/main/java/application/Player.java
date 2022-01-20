@@ -356,7 +356,7 @@ public class Player {
 				System.out.println((String) token[1] + " - " + (String) token[2]);
 			}
 		}
-		game = new Thread(new Game(lobbySpace));
+		game = new Thread(new Game(lobbySpace,id));
 		game.start();
 		
 	}

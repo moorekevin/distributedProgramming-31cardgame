@@ -7,7 +7,9 @@
 
 package application;
 
+import java.util.ArrayList;
 import java.util.List;
+import java.util.Set;
 
 import org.jspace.*;
 
@@ -19,8 +21,10 @@ public class Game implements Runnable {
 	private Space lobbySpace;
 	private Scoreboard membersScore;
 	private Thread checkInactivePlayers;
+	private String hostID;
 
-	public Game(Space lobbySpace) throws InterruptedException {
+	public Game(Space lobbySpace, String hostID) throws InterruptedException {
+		this.hostID = hostID;
 		this.lobbySpace = lobbySpace;
 		this.membersScore = new Scoreboard();
 
@@ -87,16 +91,25 @@ public class Game implements Runnable {
 		int i = 0;
 		
 		// Player 0 starts
-
-		System.out.println("Initialization: Put next turn for: " + membersScore.keySet().toArray()[i]);
+		ArrayList<String> membersList = new ArrayList<String>();
+		membersList.addAll(membersScore.keySet());
+		
+		for (String member : membersList) {
+			if (member.equals(hostID)) {
+				break;
+			} else {
+				i++;
+			}
+		}
+		System.out.println("Initialization: Put next turn for: " + membersList.get(i));
 		String knockedPlayer = null;
 		String lastPlayer = "";
 				
 		playingGameLoop: while (true) {
-			lobbySpace.put("token", "startofturn", (String) membersScore.keySet().toArray()[i]);
+			lobbySpace.put("token", "startofturn", membersList.get(i));
 			// Success: (response, id, action, "success", "You have picked a card!", card);
 			// Fail: (response, id, action, "error", "Illegal command", null)
-			String id = (String) membersScore.keySet().toArray()[i];
+			String id = membersList.get(i);
 			if (!lastPlayer.equals(id)) { // Tells all other players whose turn it is
 				tellPlayers("whosturn", id);
 				lastPlayer = id;
