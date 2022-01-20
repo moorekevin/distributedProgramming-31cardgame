@@ -107,7 +107,7 @@ public class Game implements Runnable {
 			// Fail: (response, id, action, "error", "Illegal command", null)
 			String id = membersList.get(i);
 			if (!lastPlayer.equals(id)) { // Tells all other players whose turn it is
-				tellPlayers("whosturn", id);
+				tellPlayers("whosturn", id, 0);
 				lastPlayer = id;
 			}
 
@@ -167,7 +167,7 @@ public class Game implements Runnable {
 				if (action.equals("knock")) {
 					knockedPlayer = id;
 					lobbySpace.put("response", id, action, "success", "You have knocked and ended your turn!");
-					tellPlayers("whosknocked", id);
+					tellPlayers("whosknocked", id, 0);
 				} else {
 					lobbySpace.put("response", id, action, "success", "Your turn has ended!");
 				}
@@ -190,8 +190,8 @@ public class Game implements Runnable {
 				break;
 			case "31":
 				lobbySpace.put("response", id, action, "success", "You have 31!");
-
-				endGame(id);
+				
+				endGame(id, WINNING_SCORE);
 				break;
 			default:
 				lobbySpace.put("response", id, action, "error", "Illegal command", null);
@@ -200,15 +200,15 @@ public class Game implements Runnable {
 		}
 	}
 
-	private void tellPlayers(String what, String id) throws InterruptedException {
+	private void tellPlayers(String what, String id, Integer score) throws InterruptedException {
 		for (String member : membersScore.keySet()) {
-			lobbySpace.put("info", member, what, id);
+			lobbySpace.put("info", member, what, id, score);
 		}
 	}
 
 	private void endRound(boolean roundFinished) throws InterruptedException {
 
-		tellPlayers("requestcards", "");
+		tellPlayers("requestcards", "", 0);
 
 		Object[] temp = membersScore.keySet().toArray();
 
@@ -231,11 +231,11 @@ public class Game implements Runnable {
 		}
 
 		if (roundFinished) {
-			endGame(winningPlayer);
+			endGame(winningPlayer, winningPoints);
 		}
 	}
 
-	private void endGame(String winningPlayer) throws InterruptedException {
+	private void endGame(String winningPlayer, Integer winningPoints) throws InterruptedException {
 
 		Object[] lastSBReq = lobbySpace.getp(new ActualField("scoreboard"), new FormalField(Scoreboard.class)); // Getting
 																												// the
@@ -254,9 +254,9 @@ public class Game implements Runnable {
 
 		if (winningPlayer != null) {
 			membersScore.put(winningPlayer, (Integer) (membersScore.get(winningPlayer) + 1));
-			tellPlayers("won", winningPlayer);
+			tellPlayers("won", winningPlayer, winningPoints);
 		} else {
-			tellPlayers("quit", "");
+			tellPlayers("quit", "", 0);
 		}
 
 		lobbySpace.put("scoreboard", membersScore);
@@ -290,10 +290,10 @@ public class Game implements Runnable {
 				String id = (String) inactivePlayer[1];
 				String username = (String) inactivePlayer[2];
 				membersScore.remove(id);
-				tellPlayers("inactiveplayer", username);
+				tellPlayers("inactiveplayer", username, 0);
 				// lobbySpace.getAll(new ActualField("token"),new FormalField(String.class),new
 				// FormalField(String.class));
-				endGame(null);
+				endGame(null, null);
 
 			} catch (InterruptedException e) {
 				// Do nothing

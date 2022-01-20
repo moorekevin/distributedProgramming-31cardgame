@@ -461,7 +461,7 @@ public class Player {
 			while (hasJoinedLobby) {
 				try {
 					Object[] req = lobbySpace.get(new ActualField("info"), new ActualField(id),
-							new FormalField(String.class), new FormalField(String.class));
+							new FormalField(String.class), new FormalField(String.class), new FormalField(Integer.class));
 					String playerID = (String) req[3];
 					switch ((String) req[2]) {
 					case "whosturn":
@@ -496,15 +496,16 @@ public class Player {
 						System.out.println("Player " + playerID + " has left the game. Game restarting");
 						break;
 					case "won":
+						Integer score = (Integer) req[4];
 						play.interrupt();
 						if (playerID.equals(id)) {
-							System.out.println("Congratulations! You have won this round!");
+							System.out.println("Congratulations! You have won this round with the score: " + score);
 						} else {
 							lobbySpace.put("serverrequest", "username", id, playerID);
 							String username = (String) (lobbySpace.get(new ActualField("serverresponse"),
 									new ActualField("username"), new ActualField(id),
 									new FormalField(String.class)))[3];
-							System.out.println("Player " + username + " won this round!");
+							System.out.println("Player " + username + " won this round with the score: " + score);
 						}
 						showSBandRestart();
 						break;
