@@ -10,7 +10,7 @@ import java.util.HashMap;
 
 public class Server {
 	public static final int LOBBY_CAPACITY = 4;
-	public static final String START_URI = "tcp://25.62.120.1:9002/";
+	public static final String START_URI = "tcp://localhost:9002/";
 	public static final String END_URI = "?keep";
 	public static HashMap<String, String> users;
 
@@ -109,9 +109,8 @@ class playerActivity implements Runnable {
 						Server.users.remove(playerID);
 						Object[] t = space.getp(new ActualField("lobbyname"), new ActualField(lobbyName), new FormalField(Integer.class));
 						if (t != null) {
-							Integer cap = (Integer) t[2]; 
-							// System.out.println("-------- " + (cap - 1));
-							space.put("lobbyname", lobbyName, cap - 1);
+							List<Object[]> members = lobby.queryAll(new ActualField("lobbymember"), new FormalField(String.class));
+							space.put("lobbyname", lobbyName, members.size());
 						}
 					}
 					System.out.println("Didnt get response for " + playerID);
@@ -203,7 +202,6 @@ class createLobby implements Runnable {
 				SequentialSpace createdLobby = new SequentialSpace();
 				rep.add(lobbyName, createdLobby);
 				startSpace.put("lobbyname", lobbyName, 0); // Used for giving an overview of which lobbies are available to players
-				// System.out.println("00000000");
 				System.out.println("Created Lobby \"" + lobbyName + "\" for " + userID);
 
 				createdLobby.put("host", userID);
@@ -263,9 +261,8 @@ class joinLobby implements Runnable {
 						
 						String lobbyURI = Server.START_URI + lobbyName + Server.END_URI;
 						Object[] t = startSpace.get(new ActualField("lobbyname"), new ActualField(lobbyName), new FormalField(Integer.class));
-						int cap = (int) t[2] + 1;
-						// System.out.println("+++++++ " + cap);
-						startSpace.put("lobbyname", lobbyName, cap);
+						
+						startSpace.put("lobbyname", lobbyName, members.size() + 1);
 						startSpace.put("lobbyinfo", "join", userID, lobbyURI);
 						// Start pinging user in lobby
 						new Thread(new playerActivity(rep, startSpace, lobby, userID)).start();
