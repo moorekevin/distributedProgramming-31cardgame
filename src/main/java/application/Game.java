@@ -101,7 +101,6 @@ public class Game implements Runnable {
 				i++;
 			}
 		}
-		System.out.println("Initialization: Put next turn for: " + membersList.get(i));
 		String knockedPlayer = null;
 		String lastPlayer = "";
 				
@@ -176,7 +175,6 @@ public class Game implements Runnable {
 
 				} else {
 					lobbySpace.put("token", "startofturn", nextId); // Next player's turn
-					System.out.println("Knock: Put next turn for: " + nextId);
 				}
 				break;
 			case "31":

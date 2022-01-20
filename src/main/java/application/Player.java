@@ -350,11 +350,11 @@ public class Player {
 		if (game != null) {
 			game.interrupt();
 			// remove all old tokens
-			List<Object[]> tokens = lobbySpace.getAll(new ActualField("token"), new FormalField(String.class), new FormalField(String.class));
-			System.out.println("ALL TOKENS:");
-			for (Object[] token : tokens) {
-				System.out.println((String) token[1] + " - " + (String) token[2]);
-			}
+			/*List<Object[]> tokens =*/ lobbySpace.getAll(new ActualField("token"), new FormalField(String.class), new FormalField(String.class));
+			// System.out.println("ALL TOKENS:");
+			// for (Object[] token : tokens) {
+			//	System.out.println((String) token[1] + " - " + (String) token[2]);
+			// }
 		}
 		game = new Thread(new Game(lobbySpace,id));
 		game.start();
@@ -411,7 +411,6 @@ public class Player {
 				while (true) {
 					getToken("startofturn");
 					 
-					System.out.println("got turn!!!");
 					messageTokens.get(new ActualField("printedturn"));
 					displayHand(getHand()); // 3
 					
