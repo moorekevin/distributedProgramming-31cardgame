@@ -1,4 +1,3 @@
-// TODO: max number of lobbies, exit lobby
 package application;
 
 import java.util.List;
@@ -22,23 +21,19 @@ public class Server {
 		Server server = new Server();
 		server.rep = new SpaceRepository();
 		server.startSpace = new SequentialSpace();
-		// lobbyName , id
 		server.users = new HashMap<String, String>();
 		server.lobbies = new HashMap<String,ThreadGroup>();
 		server.rep.add("startSpace", server.startSpace);
 
 		final String gateUri = START_URI + END_URI;
 		server.rep.addGate(gateUri);
-
 		System.out.println("Game server running");
-
 		// Connect and assign uniqueID to users
 		server.connectUsers();
 	}
 
 	private void connectUsers() {
 		new Thread(new lobbyButler()).start();
-
 		while (true) {
 			try {
 				String username = ((String) (startSpace.get(new ActualField("user connected"),
@@ -46,7 +41,6 @@ public class Server {
 				String uniqueID = UUID.randomUUID().toString();
 				users.put(uniqueID, username);
 				startSpace.put("uniqueid", username, uniqueID);
-
 				System.out.println(username + " has connected" + " assigned ID " + uniqueID);
 			} catch (InterruptedException e) {
 				e.printStackTrace();
@@ -56,11 +50,9 @@ public class Server {
 
 	class listenLobby implements Runnable {
 		Space space;
-
 		public listenLobby(Space space) {
 			this.space = space;
 		}
-
 		public void run() {
 			try {
 				while (true) {
@@ -74,7 +66,6 @@ public class Server {
 					}
 				}
 			} catch (InterruptedException e) {
-				// Do nothing
 			}
 		}
 	}
@@ -87,7 +78,6 @@ public class Server {
 			this.lobby = lobby;
 			this.playerID = playerID;
 		}
-
 		public void run() {
 			try {
 				while (true) {
@@ -122,7 +112,6 @@ public class Server {
 						break;
 					}
 				}
-
 			} catch (InterruptedException e) {
 				e.printStackTrace();
 			}
@@ -135,8 +124,6 @@ public class Server {
 			try {
 				while (true) {
 					
-					// ("lobby request", UNIQUEIDENTIFIER, "join", "Name")
-					// ("lobby request", UNIQUEIDENTIFIER, "host", "Name")
 					Object[] request = (startSpace.get(new ActualField("lobbyrequest"), new FormalField(String.class),
 							new FormalField(String.class), new FormalField(String.class)));
 					String userID = (String) request[1];
@@ -167,7 +154,6 @@ public class Server {
 			this.lobbyName = lobbyName;
 			this.userID = userID;
 		}
-
 		public void run() {
 			try {
 				if (rep.get(lobbyName) != null) {
@@ -187,7 +173,6 @@ public class Server {
 					(new joinLobby(lobbyName, userID)).run();
 					listener = new Thread(new listenLobby(createdLobby));
 					listener.start();
-
 				}
 			} catch (InterruptedException e) {
 				e.printStackTrace();
@@ -203,7 +188,6 @@ public class Server {
 			this.userID = userID;
 			this.lobbyName = lobbyName;
 		}
-
 		public void run() {
 			try {
 				Space lobby = rep.get(lobbyName);
@@ -219,19 +203,16 @@ public class Server {
 					} else {
 						List<Object[]> members = lobby.queryAll(new ActualField("lobbymember"),
 								new FormalField(String.class));
-
 						if (members.size() >= Server.LOBBY_CAPACITY) { // If lobby is at max capacity
 							startSpace.put("lobbyinfo", "error", userID,
 									"Lobby \"" + lobbyName + "\" is full, try another!");
 						} else { // Success
 							System.out.println("User " + userID + " joining lobby " + lobbyName);
-
 							// Puts to all players in members
 							// Player himself has not been added to members yet
 							for (Object[] member : members) {
 								lobby.put("info", (String) member[1], "joinedplayer", users.get(userID));
 							}
-
 							String lobbyURI = Server.START_URI + lobbyName + Server.END_URI;
 
 							startSpace.get(new ActualField("lobbyname"), new ActualField(lobbyName), new FormalField(Integer.class));
@@ -256,7 +237,6 @@ public class Server {
 			this.userID = userID;
 			this.lobbyName = lobbyName;
 		}
-
 		public void run() {
 			try {
 				Space lobby = rep.get(lobbyName);
