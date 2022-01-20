@@ -319,7 +319,7 @@ public class Player {
 	
 	private void getToken(String action) throws InterruptedException {
 		lobbySpace.get(new ActualField("token"), new ActualField(action), new ActualField(id));
-		
+		System.out.println("Got token for " + action);
 	}
 
 	
@@ -497,7 +497,7 @@ public class Player {
 						System.out.println("Player " + playerID + " has left the game. Game restarting");
 						break;
 					case "won":
-					
+						play.interrupt();
 						if (playerID.equals(id)) {
 							System.out.println("Congratulations! You have won this round!");
 						} else {
@@ -507,7 +507,6 @@ public class Player {
 									new FormalField(String.class)))[3];
 							System.out.println("Player " + username + " won this round!");
 						}
-						play.interrupt();
 						showSBandRestart();
 						break;
 					case "quit":
