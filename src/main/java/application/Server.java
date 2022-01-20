@@ -13,9 +13,10 @@ public class Server {
 	public static final String START_URI = "tcp://localhost:9002/";
 	public static final String END_URI = "?keep";
 	public HashMap<String, String> users;
-	public HashMap<Space, Thread> lobbies;
+	public HashMap<String, ThreadGroup> lobbies;
 	SpaceRepository rep = new SpaceRepository();
 	SequentialSpace startSpace = new SequentialSpace();
+	Thread listener;
 	
 	public static void main(String[] args) {
 		Server server = new Server();
@@ -23,7 +24,7 @@ public class Server {
 		server.startSpace = new SequentialSpace();
 		// lobbyName , id
 		server.users = new HashMap<String, String>();
-
+		server.lobbies = new HashMap<String,ThreadGroup>();
 		server.rep.add("startSpace", server.startSpace);
 
 		final String gateUri = START_URI + END_URI;
@@ -73,7 +74,7 @@ public class Server {
 					}
 				}
 			} catch (InterruptedException e) {
-				e.printStackTrace();
+				// Do nothing
 			}
 		}
 	}
@@ -104,6 +105,7 @@ public class Server {
 							startSpace.get(new ActualField("lobbyname"), new ActualField(lobbyName),
 									new FormalField(Integer.class));
 							rep.remove(lobbyName);
+							listener.interrupt();
 						} else {
 							lobby.put("inactiveplayer", playerID, users.get(playerID));
 							lobby.get(new ActualField("lobbymember"), new ActualField(playerID));
@@ -132,6 +134,7 @@ public class Server {
 		public void run() {
 			try {
 				while (true) {
+					
 					// ("lobby request", UNIQUEIDENTIFIER, "join", "Name")
 					// ("lobby request", UNIQUEIDENTIFIER, "host", "Name")
 					Object[] request = (startSpace.get(new ActualField("lobbyrequest"), new FormalField(String.class),
@@ -139,7 +142,7 @@ public class Server {
 					String userID = (String) request[1];
 					String command = ((String) request[2]).toLowerCase();
 					String lobbyName = (String) request[3];
-
+					
 					if (command.equals("j")) {
 						new Thread(new joinLobby(lobbyName, userID)).start();
 					} else if (command.equals("h")) {
@@ -182,8 +185,8 @@ public class Server {
 					createdLobby.put("lobbystatus", "public");
 
 					(new joinLobby(lobbyName, userID)).run();
-
-					new Thread(new listenLobby(createdLobby)).start();
+					listener = new Thread(new listenLobby(createdLobby));
+					listener.start();
 
 				}
 			} catch (InterruptedException e) {
