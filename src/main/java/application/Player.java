@@ -547,7 +547,7 @@ public class Player {
 						System.out.format("  %-16s %02d%n", '"' + username + "\":", scoreboard.get(member));
 			}
 			if (isHost()) {
-						lobbySpace.put("restartgame");
+				lobbySpace.put("restartgame");
 			}
 			lobbySpace.put("printedscores", id);
 		}

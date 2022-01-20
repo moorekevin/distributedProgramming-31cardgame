@@ -107,6 +107,7 @@ public class Game implements Runnable {
 				
 		playingGameLoop: while (true) {
 			lobbySpace.put("token", "startofturn", membersList.get(i));
+			lobbySpace.put("token", "startofturn", membersList.get(i));
 			// Success: (response, id, action, "success", "You have picked a card!", card);
 			// Fail: (response, id, action, "error", "Illegal command", null)
 			String id = membersList.get(i);
