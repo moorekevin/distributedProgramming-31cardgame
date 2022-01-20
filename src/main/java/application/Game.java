@@ -1,7 +1,4 @@
 /*
- * TODO: Restart after winning game: Kevin, Aryan
- * -> Start game igen så folk kan nå at enter
- * TODO: Tell lobby someone has joined
  * TODO: GUI filer
  */
 
@@ -9,7 +6,6 @@ package application;
 
 import java.util.ArrayList;
 import java.util.List;
-import java.util.Set;
 
 import org.jspace.*;
 
