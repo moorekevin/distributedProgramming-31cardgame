@@ -9,7 +9,7 @@ import java.util.HashMap;
 
 public class Server {
 	public static final int LOBBY_CAPACITY = 4;
-	public static final String START_URI = "tcp://localhost:9002/";
+	public static final String START_URI = "tcp://25.62.120.1:9002/";
 	public static final String END_URI = "?keep";
 	public HashMap<String, String> users;
 	public HashMap<String, ThreadGroup> lobbies;

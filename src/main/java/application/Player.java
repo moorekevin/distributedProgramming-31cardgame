@@ -29,7 +29,7 @@ public class Player {
 	private boolean hasJoinedLobby;
 
 	public Player() {
-		final String uri = "tcp://localhost:" + START_GATE + "/" + START_NAME + "?keep";
+		final String uri = "tcp://25.62.120.1:" + START_GATE + "/" + START_NAME + "?keep";
 		try {
 			username = getInput("Enter your username");
 			hasJoinedLobby = false;
