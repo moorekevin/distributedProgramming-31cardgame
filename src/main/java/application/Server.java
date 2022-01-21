@@ -211,7 +211,7 @@ public class Server {
 							// Puts to all players in members
 							// Player himself has not been added to members yet
 							for (Object[] member : members) {
-								lobby.put("info", (String) member[1], "joinedplayer", users.get(userID));
+								lobby.put("info", (String) member[1], "joinedplayer", users.get(userID), 0);
 							}
 							String lobbyURI = Server.START_URI + lobbyName + Server.END_URI;
 
