@@ -328,13 +328,17 @@ public class Player {
 			try {
 				Player player = getPlayer();
 				if (player.isHost()) {
+					
 					if (play != null) {
 						play.interrupt();
 						// Check if all players are ready to play
-						Scoreboard sb = (Scoreboard) lobbySpace.query(new ActualField("scoreboard"),
-								new FormalField(Scoreboard.class))[1];
-						for (int i = 0; i < sb.keySet().size() - 1; i++) {
-							lobbySpace.get(new ActualField("readytorestart"));
+						Object[] sbRequest = lobbySpace.queryp(new ActualField("scoreboard"),
+								new FormalField(Scoreboard.class));
+						if (sbRequest != null) {
+							Scoreboard sb = (Scoreboard) sbRequest[1];
+							for (int i = 0; i < sb.keySet().size() - 1; i++) {
+								lobbySpace.get(new ActualField("readytorestart"));
+							}
 						}
 					}
 					player.createGame();
